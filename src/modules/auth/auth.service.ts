@@ -12,6 +12,8 @@ import { MailerService } from 'src/helpers/mailer.helper';
 import { TokenService } from 'src/modules/tokens/token.service';
 import { ConfigService } from '@nestjs/config';
 import { SendEmailDto } from 'src/modules/auth/dto/send-email.dto';
+import { LoginDto } from 'src/modules/auth/dto/login.dto';
+import { Login } from 'src/modules/auth/types/login.types';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,49 @@ export class AuthService {
     private tokenService: TokenService,
     private configService: ConfigService,
   ) {}
+  async login(request: LoginDto): Promise<Login> {
+    const user = await this.usersService.findByEmail(
+      request.email?.toLocaleLowerCase(),
+    );
+    try {
+      if (!user) {
+        throw new NotFoundException(MESSAGE.ACCOUNT_LOGIN_FAILED);
+      }
+
+      if (user) {
+        if (user.deleteAt > 0) {
+          throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+        }
+
+        if (user.emailVerified === 0) {
+          throw new BadRequestException(MESSAGE.ACCOUNT_INACTIVE);
+        }
+      }
+
+      if (
+        !this.passwordService.comparePassword(request.password, user.password)
+      ) {
+        throw new NotFoundException(MESSAGE.ACCOUNT_LOGIN_FAILED);
+      }
+
+      const payload = {
+        userId: user.id,
+        email: user.email,
+      };
+
+      const { accessToken, refreshToken } = await this.tokenService.createOne(
+        payload,
+      );
+
+      return {
+        accessToken,
+        refreshToken,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async register(request: RegisterDto): Promise<MessageResponse> {
     try {
       const email = request.email;
@@ -72,7 +117,7 @@ export class AuthService {
       const { accessToken } = await this.tokenService.createOne(payload);
       const confirmUrl = `${this.configService.get<string>(
         'app.client_url',
-      )}/send-verify-email?token=${accessToken}`;
+      )}/verifyEmail?token=${accessToken}`;
 
       const fullName = `${email.substring(0, email.indexOf('@'))}`;
 
@@ -174,6 +219,46 @@ export class AuthService {
 
       this.mailService.sendMail(user.email, html.titles, html.content);
 
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyEmail(token: string, language: string): Promise<boolean> {
+    try {
+      const tokenData = await this.tokenService.validateToken(token);
+
+      if (!tokenData) {
+        throw new BadRequestException(MESSAGE.INVALID_OR_EXPIRED_TOKEN);
+      }
+
+      const user = await this.usersService.findByEmail(tokenData.email);
+
+      if (!user) {
+        throw new NotFoundException(MESSAGE.ACCOUNT_NOT_EXISTED);
+      }
+
+      if (user.deleteAt > 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+      }
+
+      if (user.emailVerified === 1) {
+        await this.tokenService.delete(tokenData.tokenId);
+        throw new BadRequestException(MESSAGE.ACCOUNT_CONFIRMED);
+      }
+
+      if (user.emailVerified === 0) {
+        user.emailVerified = 1;
+        user.updateAt = new Date().getTime();
+        const result = await this.usersService.save(user);
+
+        if (!result) {
+          throw new BadRequestException(MESSAGE.ACCOUNT_VERIFY_FAILED);
+        }
+      }
+     
+      await this.tokenService.delete(tokenData.tokenId);
       return true;
     } catch (error) {
       throw error;
