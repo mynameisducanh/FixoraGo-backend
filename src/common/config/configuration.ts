@@ -1,6 +1,6 @@
 export default () => ({
   app: {
-    port: process.env.PORT || '3000',
+    port: process.env.PORT || '3333',
     server_url: process.env.SERVER_URL || '',
     client_url: process.env.CLIENT_URL || '',
     salt_round: process.env.SALT_ROUND || '',
