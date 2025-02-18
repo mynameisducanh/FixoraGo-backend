@@ -1,7 +1,7 @@
 import { Body, Controller, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { MessageResponse } from "src/common/types/response";
-import { Language } from "src/decorators/language.decorator";
+import { Language } from "src/common/decorators/language.decorator";
 import { AuthService } from "src/modules/auth/auth.service";
 import { ConfirmRegisterDto } from "src/modules/auth/dto/confirm-email.dto";
 import { LoginDto } from "src/modules/auth/dto/login.dto";

@@ -13,16 +13,20 @@ async function bootstrap() {
     configService.get<string>('app.client_url'),
   ];
   app.useGlobalPipes(new ValidationPipe({}));
+  // app.enableCors({
+  //   origin: function (origin, callback) {
+  //     if (!origin || whitelist.indexOf(origin) !== -1) {
+  //       callback(null, true);
+  //     } else {
+  //       callback(new Error('Not allowed by CORS'));
+  //     }
+  //   },
+  // });
   app.enableCors({
-    origin: function (origin, callback) {
-      if (!origin || whitelist.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: '*',
+    exposedHeaders: ['Content-Disposition'],
   });
-  // app.enableCors({ exposedHeaders: ['Content-Disposition'] });
+  
   app.setGlobalPrefix('api');
   const config = new DocumentBuilder()
     .setTitle('InWeb API')
