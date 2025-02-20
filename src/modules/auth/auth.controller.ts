@@ -23,6 +23,8 @@ export class AuthController {
     async register(
       @Body() registerRequest: RegisterDto,
     ): Promise<MessageResponse> {
+      console.log(registerRequest);
+      
       return await this.authService.register(
         registerRequest
       );

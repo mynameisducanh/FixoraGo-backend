@@ -1,33 +1,64 @@
+// export const MESSAGE = {
+//   //auth
+//   ACCOUNT_REGISTER_SUCCESS: 'auth.account_register_success',
+//   ACCOUNT_LOGIN_FAILED: 'auth.account_login_failed',
+//   ACCOUNT_NOT_EXISTED: 'auth.account_not_existed',
+//   ACCOUNT_CONFIRMED: 'auth.account_confirmed',
+//   ACCOUNT_VERIFY_FAILED: 'auth.account_verify_failed',
+//   ACCOUNT_NOT_ACTIVATED: 'auth.account_not_activated',
+//   ACCOUNT_RESET_PASSWORD_FAILED: 'auth.account_reset_password_failed',
+//   FORBIDDEN: 'auth.forbidden ',
+//   ACCOUNT_INCORRECT_PASSWORD: 'auth.account_incorrect_password',
+//   ACCOUNT_CHANGE_PASSWORD_SUCCESS: 'auth.account_change_password_success',
+//   ACCOUNT_CHANGE_PASSWORD_FAILED: 'auth.account_change_password_failed',
+//   ACCOUNT_LOCKED: 'auth.account_locked',
+//   ACCOUNT_INACTIVE: 'auth.account_inactive',
+
+//   //token
+//   INVALID_OR_EXPIRED_TOKEN: 'token.invalid_or_expired_token',
+
+//   //user
+//   USER_NOT_FOUND: 'user.user_notfound',
+//   EMAIL_EXISTED: 'user.email_existed',
+//   EMAIL_NOT_EXIST: 'user.email_not_exist',
+//   UPDATE_USER_SUCCESS: 'user.update_success',
+//   UPDATE_USER_FAIL: 'user.update_user_failed',
+//   SOFT_DELETE_SUCCESS: 'user.soft_delete_user_success',
+//   SOFT_DELETE_FAIL: 'user.soft_delete_user_fail',
+//   HARD_DELETE_USER_SUCCESS: 'user.hard_delete_success',
+//   HARD_DELETE_USER_FAIL: 'user.hard_delete_fail',
+// };
 export const MESSAGE = {
-  //auth
-  ACCOUNT_REGISTER_SUCCESS: 'auth.account_register_success',
-  ACCOUNT_LOGIN_FAILED: 'auth.account_login_failed',
-  ACCOUNT_NOT_EXISTED: 'auth.account_not_existed',
-  ACCOUNT_CONFIRMED: 'auth.account_confirmed',
-  ACCOUNT_VERIFY_FAILED: 'auth.account_verify_failed',
-  ACCOUNT_NOT_ACTIVATED: 'auth.account_not_activated',
-  ACCOUNT_RESET_PASSWORD_FAILED: 'auth.account_reset_password_failed',
-  FORBIDDEN: 'auth.forbidden ',
-  ACCOUNT_INCORRECT_PASSWORD: 'auth.account_incorrect_password',
-  ACCOUNT_CHANGE_PASSWORD_SUCCESS: 'auth.account_change_password_success',
-  ACCOUNT_CHANGE_PASSWORD_FAILED: 'auth.account_change_password_failed',
-  ACCOUNT_LOCKED: 'auth.account_locked',
-  ACCOUNT_INACTIVE: 'auth.account_inactive',
+  // Xác thực
+  ACCOUNT_REGISTER_SUCCESS: 'Đăng ký tài khoản thành công',
+  ACCOUNT_LOGIN_FAILED: 'Đăng nhập thất bại',
+  ACCOUNT_NOT_EXISTED: 'Tài khoản không tồn tại',
+  ACCOUNT_CONFIRMED: 'Tài khoản đã được xác nhận',
+  ACCOUNT_VERIFY_FAILED: 'Xác thực tài khoản thất bại',
+  ACCOUNT_NOT_ACTIVATED: 'Tài khoản chưa được kích hoạt',
+  ACCOUNT_RESET_PASSWORD_FAILED: 'Đặt lại mật khẩu thất bại',
+  FORBIDDEN: 'Truy cập bị từ chối',
+  ACCOUNT_INCORRECT_PASSWORD: 'Mật khẩu không chính xác',
+  ACCOUNT_CHANGE_PASSWORD_SUCCESS: 'Đổi mật khẩu thành công',
+  ACCOUNT_CHANGE_PASSWORD_FAILED: 'Đổi mật khẩu thất bại',
+  ACCOUNT_LOCKED: 'Tài khoản đã bị khóa',
+  ACCOUNT_INACTIVE: 'Tài khoản chưa xác thực',
 
-  //token
-  INVALID_OR_EXPIRED_TOKEN: 'token.invalid_or_expired_token',
+  // Token
+  INVALID_OR_EXPIRED_TOKEN: 'Token không hợp lệ hoặc đã hết hạn',
 
-  //user
-  USER_NOT_FOUND: 'user.user_notfound',
-  EMAIL_EXISTED: 'user.email_existed',
-  EMAIL_NOT_EXIST: 'user.email_not_exist',
-  UPDATE_USER_SUCCESS: 'user.update_success',
-  UPDATE_USER_FAIL: 'user.update_user_failed',
-  SOFT_DELETE_SUCCESS: 'user.soft_delete_user_success',
-  SOFT_DELETE_FAIL: 'user.soft_delete_user_fail',
-  HARD_DELETE_USER_SUCCESS: 'user.hard_delete_success',
-  HARD_DELETE_USER_FAIL: 'user.hard_delete_fail',
+  // Người dùng
+  USER_NOT_FOUND: 'Không tìm thấy người dùng',
+  EMAIL_EXISTED: 'Email đã tồn tại',
+  EMAIL_NOT_EXIST: 'Email không tồn tại',
+  UPDATE_USER_SUCCESS: 'Cập nhật thông tin người dùng thành công',
+  UPDATE_USER_FAIL: 'Cập nhật thông tin người dùng thất bại',
+  SOFT_DELETE_SUCCESS: 'Xóa mềm người dùng thành công',
+  SOFT_DELETE_FAIL: 'Xóa mềm người dùng thất bại',
+  HARD_DELETE_USER_SUCCESS: 'Xóa vĩnh viễn người dùng thành công',
+  HARD_DELETE_USER_FAIL: 'Xóa vĩnh viễn người dùng thất bại',
 };
+
 // mail footer
 export const MAIL_FOOTER = (language: string) => {
   const footers: Record<string, string> = {
