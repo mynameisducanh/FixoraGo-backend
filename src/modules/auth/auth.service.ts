@@ -126,7 +126,7 @@ export class AuthService {
       this.mailService.sendMail(email, html.titles, html.content);
       return {
         statusCode: HttpStatus.OK,
-        message: MESSAGE.USER_NOT_FOUND,
+        message: MESSAGE.ACCOUNT_REGISTER_SUCCESS,
       };
     } catch (error) {
       throw error;

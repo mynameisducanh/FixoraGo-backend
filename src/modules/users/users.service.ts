@@ -13,7 +13,7 @@ export class UsersService {
   async save(user: DeepPartial<UsersEntity>): Promise<UsersEntity> {
     return await this.userRes.save(user);
   }
-  
+
   async findByEmail(email: string): Promise<UsersEntity> {
     const user = await this.userRes.findOne({ where: { email } });
     return user;
@@ -23,16 +23,13 @@ export class UsersService {
     const user = await this.userRes.findOne({
       where: { id },
     });
-    if (!user) {
-        throw new Error(`User ${user} not found`);
-      }
     return user;
   }
 
   async findById(id: string): Promise<UsersEntity> {
     const user = await this.userRes
       .createQueryBuilder('user')
-      .where("user.Id = :id", { id })
+      .where('user.Id = :id', { id })
       .select([
         'user.Id as id',
         'user.Username as username',
@@ -51,8 +48,7 @@ export class UsersService {
         'user.LastCheckIn as lastCheckIn',
       ])
       .getRawOne();
-  
+
     return user;
   }
-  
 }
