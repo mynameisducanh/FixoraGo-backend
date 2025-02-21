@@ -1,4 +1,11 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Role, timeZoneObj } from 'src/common/constants/enum';
 import { CONFIRM_REGISTER, MESSAGE } from 'src/common/constants/message';
 import { MessageResponse } from 'src/common/types/response';
@@ -14,6 +21,7 @@ import { ConfigService } from '@nestjs/config';
 import { SendEmailDto } from 'src/modules/auth/dto/send-email.dto';
 import { LoginDto } from 'src/modules/auth/dto/login.dto';
 import { Login } from 'src/modules/auth/types/login.types';
+import { OtpService } from 'src/modules/otp/otp.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +32,8 @@ export class AuthService {
     private mailService: MailerService,
     private tokenService: TokenService,
     private configService: ConfigService,
+    @Inject(forwardRef(() => OtpService))
+    private otpService: OtpService,
   ) {}
   async login(request: LoginDto): Promise<Login> {
     const user = await this.usersService.findByEmail(
@@ -55,9 +65,8 @@ export class AuthService {
         email: user.email,
       };
 
-      const { accessToken, refreshToken } = await this.tokenService.createOne(
-        payload,
-      );
+      const { accessToken, refreshToken } =
+        await this.tokenService.createOne(payload);
 
       return {
         accessToken,
@@ -118,10 +127,10 @@ export class AuthService {
       const confirmUrl = `${this.configService.get<string>(
         'app.client_url',
       )}/verifyEmail?token=${accessToken}`;
-
+      const otp = await this.otpService.createOtp(email);
       const fullName = `${email.substring(0, email.indexOf('@'))}`;
 
-      const html = CONFIRM_REGISTER("vi",fullName, confirmUrl);
+      const html = CONFIRM_REGISTER('vi', fullName, otp.otp);
 
       this.mailService.sendMail(email, html.titles, html.content);
       return {
@@ -257,8 +266,40 @@ export class AuthService {
           throw new BadRequestException(MESSAGE.ACCOUNT_VERIFY_FAILED);
         }
       }
-     
+
       await this.tokenService.delete(tokenData.tokenId);
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyOtp(email: string): Promise<boolean> {
+    try {
+      const user = await this.usersService.findByEmail(email);
+
+      if (!user) {
+        throw new NotFoundException(MESSAGE.ACCOUNT_NOT_EXISTED);
+      }
+
+      if (user.deleteAt > 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+      }
+
+      if (user.emailVerified === 1) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_CONFIRMED);
+      }
+
+      if (user.emailVerified === 0) {
+        user.emailVerified = 1;
+        user.updateAt = new Date().getTime();
+        const result = await this.usersService.save(user);
+
+        if (!result) {
+          throw new BadRequestException(MESSAGE.ACCOUNT_VERIFY_FAILED);
+        }
+      }
+
       return true;
     } catch (error) {
       throw error;
