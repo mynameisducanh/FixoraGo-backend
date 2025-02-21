@@ -20,6 +20,7 @@ import { StaffModule } from 'src/modules/staffs/staffs.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import configuration from 'src/common/config/configuration';
+import { OtpModule } from 'src/modules/otp/otp.module';
 
 @Module({
   imports: [
@@ -46,7 +47,7 @@ import configuration from 'src/common/config/configuration';
     AuthModule,
     TokenModule,
     StaffModule,
-    
+    OtpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
