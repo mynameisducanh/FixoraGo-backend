@@ -57,6 +57,8 @@ export class AuthService {
       if (
         !this.passwordService.comparePassword(request.password, user.password)
       ) {
+        console.log("vào đây");
+        
         throw new NotFoundException(MESSAGE.ACCOUNT_LOGIN_FAILED);
       }
 
