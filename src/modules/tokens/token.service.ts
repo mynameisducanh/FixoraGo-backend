@@ -47,7 +47,7 @@ export class TokenService {
 
   generateToken(payload: any, key: string, expiresIn: string) {
     const options: jwt.SignOptions = {
-      expiresIn: expiresIn,
+      expiresIn: Number(expiresIn),
       algorithm: 'RS256',
       allowInsecureKeySizes: true,
     };

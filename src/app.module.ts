@@ -21,6 +21,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import configuration from 'src/common/config/configuration';
 import { OtpModule } from 'src/modules/otp/otp.module';
+import { IconsModule } from 'src/modules/icons/icons.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { OtpModule } from 'src/modules/otp/otp.module';
     TokenModule,
     StaffModule,
     OtpModule,
+    IconsModule
   ],
   controllers: [AppController],
   providers: [AppService],

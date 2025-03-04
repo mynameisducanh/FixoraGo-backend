@@ -57,6 +57,8 @@ export const MESSAGE = {
   SOFT_DELETE_FAIL: 'Xóa mềm người dùng thất bại',
   HARD_DELETE_USER_SUCCESS: 'Xóa vĩnh viễn người dùng thành công',
   HARD_DELETE_USER_FAIL: 'Xóa vĩnh viễn người dùng thất bại',
+
+  FILES_UPLOADED_SUCCESS:'Upload icon thành công'
 };
 
 // mail footer
