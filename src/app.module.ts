@@ -22,6 +22,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import configuration from 'src/common/config/configuration';
 import { OtpModule } from 'src/modules/otp/otp.module';
 import { IconsModule } from 'src/modules/icons/icons.module';
+import { IconsServiceModule } from 'src/modules/iconsService/iconsService.module';
+import { ServicesModule } from 'src/modules/services/services.module';
 
 @Module({
   imports: [
@@ -49,7 +51,9 @@ import { IconsModule } from 'src/modules/icons/icons.module';
     TokenModule,
     StaffModule,
     OtpModule,
-    IconsModule
+    IconsModule,
+    ServicesModule,
+    IconsServiceModule
   ],
   controllers: [AppController],
   providers: [AppService],
