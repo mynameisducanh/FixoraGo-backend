@@ -31,7 +31,7 @@ export class IconsServiceService {
     const newFileRecord: DeepPartial<IconServiceEntity> = {
       name: body.name,
       type: body.type,
-      idService: 0,
+      idService: body.idService,
       url: fileUrl,
       totalViews: 0,
       createAt: new Date().getTime(),
@@ -44,14 +44,14 @@ export class IconsServiceService {
     };
   }
 
-  async getAll(): Promise<IconServiceResponse> {
+  async getAll(): Promise<IconServiceResponse[]> {
     try {
       const queryResult =
         this.iconServiceRes.createQueryBuilder('iconsService');
 
       const data = queryResult
-        .orderBy('iconsService.UpdateAt', 'DESC')
-        .addOrderBy('iconsService.CreateAt', 'DESC')
+        .orderBy('iconsService.UpdateAt', 'ASC')
+        .addOrderBy('iconsService.CreateAt', 'ASC')
         .addSelect([
           'iconsService.id AS id',
           'iconsService.CreateAt AS createAt',
@@ -63,7 +63,7 @@ export class IconsServiceService {
           'iconsService.totalViews AS totalViews',
         ]);
 
-      const result = await data.getRawOne();
+      const result = await data.getRawMany();
       const items = plainToClass(IconServiceResponse, result, {
         excludeExtraneousValues: true,
       });

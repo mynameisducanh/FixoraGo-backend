@@ -10,43 +10,41 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { IconsServiceService } from 'src/modules/iconsService/iconsService.service';
-import { CreateIconDto } from './dto/create-icon-service.dto';
+import { CreateIconDto } from './dto/create-list-detail-service.dto';
 import { UpdateIconDto } from './dto/update-icon-service.dto';
 import { IconServiceEntity } from 'src/database/entities/iconsService.entity';
 import { MessageResponse } from 'src/common/types/response';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { ApiConsumes } from '@nestjs/swagger';
 import { IconServiceResponse } from 'src/modules/iconsService/types/iconService.types';
+import { ListDetailServiceService } from 'src/modules/listDetailService/listDetailService.service';
+import { ListDetailServiceEntity } from 'src/database/entities/list-detail-service.entity';
+import { ListDetailServiceResponse } from 'src/modules/listDetailService/types/listDetailService.types';
 
-@Controller('iconsService')
-export class IconsServiceController {
-  constructor(private readonly iconsService: IconsServiceService) {}
+@Controller('listDetailService')
+export class ListDetailServiceController {
+  constructor(private readonly iconsService: ListDetailServiceService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data; charset=UTF-8')
-  async create(
-    @Body() body: CreateIconDto,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<MessageResponse> {
-    return await this.iconsService.createIconService(file, body);
+  async create(@Body() body: CreateIconDto): Promise<MessageResponse> {
+    return await this.iconsService.createIconService(body);
   }
 
   @Get()
-  async getAll() :Promise<IconServiceResponse[]> {
+  async getAll(): Promise<ListDetailServiceResponse[]> {
     return await this.iconsService.getAll();
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<IconServiceEntity> {
-    return this.iconsService.findOne(id);
+  async findOne(@Param('id') id: number): Promise<ListDetailServiceResponse[]> {
+    return this.iconsService.getAllByServiceId(id);
   }
 
   @Put(':id')
   async update(
     @Param('id') id: number,
     @Body() updateIconDto: UpdateIconDto,
-  ): Promise<IconServiceEntity> {
+  ): Promise<ListDetailServiceEntity> {
     return this.iconsService.update(id, updateIconDto);
   }
 

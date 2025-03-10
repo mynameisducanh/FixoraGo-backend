@@ -24,6 +24,7 @@ import { OtpModule } from 'src/modules/otp/otp.module';
 import { IconsModule } from 'src/modules/icons/icons.module';
 import { IconsServiceModule } from 'src/modules/iconsService/iconsService.module';
 import { ServicesModule } from 'src/modules/services/services.module';
+import { ListDetailServiceModule } from 'src/modules/listDetailService/listDetailService.module';
 
 @Module({
   imports: [
@@ -53,7 +54,8 @@ import { ServicesModule } from 'src/modules/services/services.module';
     OtpModule,
     IconsModule,
     ServicesModule,
-    IconsServiceModule
+    IconsServiceModule,
+    ListDetailServiceModule
   ],
   controllers: [AppController],
   providers: [AppService],
