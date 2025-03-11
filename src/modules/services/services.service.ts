@@ -1,6 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Multer } from 'multer';
 import { MessageResponse } from 'src/common/types/response';
 import { ServicesEntity } from 'src/database/entities/services.entity';
 import { CloudService } from 'src/helpers/cloud.helper';

@@ -1,7 +1,6 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
-import { IconServiceEntity } from 'src/database/entities/iconsService.entity';
 import { CreateIconDto } from './dto/create-list-detail-service.dto';
 import { MessageResponse } from 'src/common/types/response';
 import { plainToClass } from 'class-transformer';
@@ -62,6 +61,7 @@ export class ListDetailServiceService {
       return items;
     } catch (error) {}
   }
+
   async getAllByServiceId(
     ServiceId: number,
   ): Promise<ListDetailServiceResponse[]> {
@@ -90,12 +90,16 @@ export class ListDetailServiceService {
       return items;
     } catch (error) {}
   }
-  async findOne(id: number): Promise<ListDetailServiceEntity> {
-    const icon = await this.listDetailServiceRes.findOne({ where: { id } });
-    if (!icon) {
-      throw new NotFoundException(`Icon with ID ${id} not found`);
-    }
-    return icon;
+
+  async getOneByUnitId(
+    unit: string,
+  ): Promise<ListDetailServiceResponse> {
+    try {
+      const priceService = await this.listDetailServiceRes.findOne({
+        where: { unit },
+      });
+      return priceService;
+    } catch (error) {}
   }
 
   // async update(
