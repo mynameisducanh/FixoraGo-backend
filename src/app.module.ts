@@ -21,9 +21,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import configuration from 'src/common/config/configuration';
 import { OtpModule } from 'src/modules/otp/otp.module';
-import { IconsModule } from 'src/modules/icons/icons.module';
 import { IconsServiceModule } from 'src/modules/iconsService/iconsService.module';
 import { ServicesModule } from 'src/modules/services/services.module';
+import { ListDetailServiceModule } from 'src/modules/listDetailService/listDetailService.module';
+import { PriceServiceModule } from 'src/modules/pricesService/pricesService.module';
 
 @Module({
   imports: [
@@ -51,9 +52,10 @@ import { ServicesModule } from 'src/modules/services/services.module';
     TokenModule,
     StaffModule,
     OtpModule,
-    IconsModule,
     ServicesModule,
-    IconsServiceModule
+    IconsServiceModule,
+    ListDetailServiceModule,
+    PriceServiceModule
   ],
   controllers: [AppController],
   providers: [AppService],

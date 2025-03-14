@@ -33,11 +33,9 @@ export class IconsServiceController {
   }
 
   @Get()
-  async getAll() :Promise<IconServiceResponse> {
+  async getAll() :Promise<IconServiceResponse[]> {
     return await this.iconsService.getAll();
   }
-
-
 
   @Get(':id')
   async findOne(@Param('id') id: number): Promise<IconServiceEntity> {
