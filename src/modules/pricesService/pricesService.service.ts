@@ -26,7 +26,14 @@ export class PriceServiceService {
     });
     return priceService;
   }
-
+  async getOneByUnitId(unitService: string): Promise<PricesServiceEntity> {
+    try {
+      const priceService = await this.priceServiceRes.findOne({
+        where: { unitService },
+      });
+      return priceService;
+    } catch (error) {}
+  }
   async createPricesService(
     file: Express.Multer.File,
     body: CreatePricesServiceDto,
@@ -111,13 +118,6 @@ export class PriceServiceService {
       });
       return items;
     } catch (error) {}
-  }
-  async findOne(id: number): Promise<PricesServiceEntity> {
-    const icon = await this.priceServiceRes.findOne({ where: { id } });
-    if (!icon) {
-      throw new NotFoundException(`Icon with ID ${id} not found`);
-    }
-    return icon;
   }
 
   async remove(id: number): Promise<void> {

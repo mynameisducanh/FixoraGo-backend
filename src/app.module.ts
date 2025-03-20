@@ -25,6 +25,7 @@ import { IconsServiceModule } from 'src/modules/iconsService/iconsService.module
 import { ServicesModule } from 'src/modules/services/services.module';
 import { ListDetailServiceModule } from 'src/modules/listDetailService/listDetailService.module';
 import { PriceServiceModule } from 'src/modules/pricesService/pricesService.module';
+import { RequestServiceModule } from 'src/modules/requestService/requestService.module';
 
 @Module({
   imports: [
@@ -55,7 +56,8 @@ import { PriceServiceModule } from 'src/modules/pricesService/pricesService.modu
     ServicesModule,
     IconsServiceModule,
     ListDetailServiceModule,
-    PriceServiceModule
+    PriceServiceModule,
+    RequestServiceModule
   ],
   controllers: [AppController],
   providers: [AppService],
