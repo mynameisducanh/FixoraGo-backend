@@ -47,6 +47,11 @@ export class PriceServiceController {
   async getOne(@Param('id') id: string): Promise<PricesServiceEntity> {
     return await this.pricesService.getOne(id);
   }
+
+  @Get('unit/:unit')
+  async getOneByUnit(@Param('unit') unit: string): Promise<PricesServiceEntity> {
+    return await this.pricesService.getOneByUnitId(unit);
+  }
   // @Put(':id')
   // async update(
   //   @Param('id') id: number,
