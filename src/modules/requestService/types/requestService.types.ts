@@ -1,32 +1,32 @@
 import { Expose, Transform } from 'class-transformer';
 
-export class PriceServiceResponse {
+export class RequestServiceResponse {
   @Expose()
-  id: number;
+  id: string;
 
   @Expose()
-  name: string;
+  userId: string;
 
   @Expose()
-  serviceId: string;
+  staffId: string;
 
   @Expose()
-  unitService: string;
+  nameService: string;
 
   @Expose()
-  price: string;
+  listDetailService: string;
 
   @Expose()
-  min_price: string;
+  priceService: string;
 
   @Expose()
-  max_price: string;
+  typeService: string;
 
   @Expose()
-  imageUrl: string;
+  note: string;
 
   @Expose()
-  totalUse: string;
+  status: string;
 
   @Expose()
   @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))
