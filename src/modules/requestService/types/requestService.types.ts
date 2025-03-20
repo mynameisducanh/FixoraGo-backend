@@ -1,14 +1,14 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class RequestServiceResponse {
   @Expose()
   id: string;
 
   @Expose()
-  userId: number;
+  userId: string;
 
   @Expose()
-  staffId: number;
+  staffId: string;
 
   @Expose()
   nameService: string;
@@ -27,4 +27,20 @@ export class RequestServiceResponse {
 
   @Expose()
   status: string;
+
+  @Expose()
+  @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))
+  createAt?: Date;
+
+  @Expose()
+  @Transform(({ obj }) =>
+    parseInt(obj.updateAt) === 0 ? null : new Date(parseInt(obj.updateAt, 10)),
+  )
+  updateAt?: Date;
+
+  @Expose()
+  @Transform(({ obj }) =>
+    parseInt(obj.deleteAt) === 0 ? null : new Date(parseInt(obj.deleteAt, 10)),
+  )
+  deleteAt?: Date;
 }

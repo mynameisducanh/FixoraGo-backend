@@ -4,10 +4,10 @@ import { IsString, IsOptional, IsInt } from 'class-validator';
 export class CreateRequestServiceDto {
   @ApiPropertyOptional()
   @IsOptional()
-  userId: number;
+  userId: string;
 
   @ApiPropertyOptional()
-  staffId: number;
+  staffId: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -20,10 +20,10 @@ export class RequestServiceEntity extends BaseTimestamp {
   id: string;
 
   @Column('int', { name: 'userId', nullable: true })
-  userId: number;
+  userId: string;
 
   @Column('int', { name: 'staffId', nullable: true })
-  staffId: number;
+  staffId: string;
 
   @Column({ name: 'nameService', nullable: true })
   nameService: string;

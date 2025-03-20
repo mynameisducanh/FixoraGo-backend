@@ -9,6 +9,7 @@ import {
   ServiceStatus,
 } from 'src/database/entities/request-service.entity';
 import { RequestServiceResponse } from 'src/modules/requestService/types/requestService.types';
+import { GetAllRequestServiceDto } from 'src/modules/requestService/dto/get-all-request-service.dto';
 
 @Injectable()
 export class RequestServiceService {
@@ -27,8 +28,8 @@ export class RequestServiceService {
     body: CreateRequestServiceDto,
   ): Promise<MessageResponse> {
     const newFileRecord: DeepPartial<RequestServiceEntity> = {
-      userId: 0,
-      staffId: 0,
+      userId: body.userId,
+      staffId: body.staffId,
       nameService: body.nameService,
       listDetailService: body.listDetailService,
       priceService: body.priceService,
@@ -55,12 +56,14 @@ export class RequestServiceService {
         .addOrderBy('requestServices.CreateAt', 'ASC')
         .addSelect([
           'requestServices.id AS id',
+          'requestServices.userId AS userId',
+          'requestServices.staffId AS staffId',
           'requestServices.CreateAt AS createAt',
           'requestServices.UpdateAt AS updateAt',
-          'requestServices.UserId AS userId',
-          'requestServices.StaffId AS staffId',
-          'requestServices.ServiceId AS serviceId',
-          'requestServices.UnitService AS unitService',
+          'requestServices.NameService AS nameService',
+          'requestServices.ListDetailService AS listDetailService',
+          'requestServices.PriceService AS priceService',
+          'requestServices.TypeService AS typeService',
           'requestServices.Note AS note',
           'requestServices.Status AS status',
         ]);
@@ -73,25 +76,36 @@ export class RequestServiceService {
     } catch (error) {}
   }
 
-  async getAllByServiceId(
-    ServiceId: number,
+  async getAllByUserId(
+    body: GetAllRequestServiceDto,
   ): Promise<RequestServiceResponse[]> {
     try {
       const queryResult =
         this.requestServiceRes.createQueryBuilder('requestServices');
 
+      if (body.isStaff) {
+        queryResult.where('requestServices.StaffId = :userId', {
+          userId: body.userId,
+        });
+      } else {
+        queryResult.where('requestServices.UserId = :userId', {
+          userId: body.userId,
+        });
+      }
+
       const data = queryResult
-        .where('requestServices.ServiceId = :ServiceId', { ServiceId })
         .orderBy('requestServices.UpdateAt', 'ASC')
         .addOrderBy('requestServices.CreateAt', 'ASC')
         .addSelect([
           'requestServices.id AS id',
+          'requestServices.userId AS userId',
+          'requestServices.staffId AS staffId',
           'requestServices.CreateAt AS createAt',
           'requestServices.UpdateAt AS updateAt',
-          'requestServices.UserId AS userId',
-          'requestServices.StaffId AS staffId',
-          'requestServices.ServiceId AS serviceId',
-          'requestServices.UnitService AS unitService',
+          'requestServices.NameService AS nameService',
+          'requestServices.ListDetailService AS listDetailService',
+          'requestServices.PriceService AS priceService',
+          'requestServices.TypeService AS typeService',
           'requestServices.Note AS note',
           'requestServices.Status AS status',
         ]);
@@ -106,21 +120,34 @@ export class RequestServiceService {
 
   async getOneById(id: string): Promise<RequestServiceResponse> {
     try {
-      const requestService = await this.requestServiceRes.findOne({
-        where: { id },
-      });
-      return requestService;
-    } catch (error) {}
-  }
+      const queryResult = this.requestServiceRes
+        .createQueryBuilder('requestServices')
+        .andWhere('requestServices.id = :id', { id: id })
+        .addOrderBy('requestServices.CreateAt', 'ASC')
+        .addSelect([
+          'requestServices.id AS id',
+          'requestServices.userId AS userId',
+          'requestServices.staffId AS staffId',
+          'requestServices.CreateAt AS createAt',
+          'requestServices.UpdateAt AS updateAt',
+          'requestServices.NameService AS nameService',
+          'requestServices.ListDetailService AS listDetailService',
+          'requestServices.PriceService AS priceService',
+          'requestServices.TypeService AS typeService',
+          'requestServices.Note AS note',
+          'requestServices.Status AS status',
+        ])
+        .getRawMany();
 
-  // async update(
-  //   id: number,
-  //   updateIconDto: UpdateIconDto,
-  // ): Promise<RequestServiceEntity> {
-  //   await this.findOne(id);
-  //   await this.requestServiceRes.update(id, updateIconDto);
-  //   return this.findOne(id);
-  // }
+      const items = plainToClass(RequestServiceResponse, queryResult, {
+        excludeExtraneousValues: true,
+      });
+
+      return items;
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async remove(id: number): Promise<void> {
     const result = await this.requestServiceRes.delete(id);
