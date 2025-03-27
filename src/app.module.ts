@@ -26,6 +26,7 @@ import { ServicesModule } from 'src/modules/services/services.module';
 import { ListDetailServiceModule } from 'src/modules/listDetailService/listDetailService.module';
 import { PriceServiceModule } from 'src/modules/pricesService/pricesService.module';
 import { RequestServiceModule } from 'src/modules/requestService/requestService.module';
+import { ChatModule } from 'src/modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -57,7 +58,8 @@ import { RequestServiceModule } from 'src/modules/requestService/requestService.
     IconsServiceModule,
     ListDetailServiceModule,
     PriceServiceModule,
-    RequestServiceModule
+    RequestServiceModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
