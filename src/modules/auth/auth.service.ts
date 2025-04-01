@@ -35,10 +35,9 @@ export class AuthService {
     @Inject(forwardRef(() => OtpService))
     private otpService: OtpService,
   ) {}
+
   async login(request: LoginDto): Promise<Login> {
-    const user = await this.usersService.findByEmail(
-      request.email?.toLocaleLowerCase(),
-    );
+    const user = await this.usersService.findByUsername(request.username);
     try {
       if (!user) {
         throw new NotFoundException(MESSAGE.ACCOUNT_LOGIN_FAILED);
@@ -57,8 +56,6 @@ export class AuthService {
       if (
         !this.passwordService.comparePassword(request.password, user.password)
       ) {
-        console.log("vào đây");
-        
         throw new NotFoundException(MESSAGE.ACCOUNT_LOGIN_FAILED);
       }
 
@@ -81,10 +78,18 @@ export class AuthService {
 
   async register(request: RegisterDto): Promise<MessageResponse> {
     try {
-      const email = request.email;
+      const { email, username } = request;
+
+      // Check if email exists
       let user = await this.usersService.findByEmail(email);
       if (user) {
         throw new BadRequestException(MESSAGE.EMAIL_EXISTED);
+      }
+
+      // Check if username exists
+      user = await this.usersService.findByUsername(username);
+      if (user) {
+        throw new BadRequestException('Username already exists');
       }
 
       const hashedPassword = this.passwordService.encryptPassword(
@@ -98,7 +103,7 @@ export class AuthService {
         createAt: new Date().getTime(),
         updateAt: new Date().getTime(),
         deleteAt: 0,
-        username: email.substring(0, email.indexOf('@')),
+        username: username,
         password: hashedPassword,
         authData: '',
         authService: '',
@@ -120,6 +125,7 @@ export class AuthService {
         lastCheckIn: 0,
         timezone: timeZoneObj,
       });
+
       const payload = {
         userId: userId,
         email,
@@ -130,7 +136,7 @@ export class AuthService {
         'app.client_url',
       )}/verifyEmail?token=${accessToken}`;
       const otp = await this.otpService.createOtp(email);
-      const fullName = `${email.substring(0, email.indexOf('@'))}`;
+      const fullName = username;
 
       const html = CONFIRM_REGISTER('vi', fullName, otp.otp);
 
@@ -146,11 +152,20 @@ export class AuthService {
 
   async registerStaff(request: RegisterStaffDto): Promise<MessageResponse> {
     try {
-      const email = request.email;
+      const { email, username } = request;
+
+      // Check if email exists
       let user = await this.usersService.findByEmail(email);
       if (user) {
         throw new BadRequestException(MESSAGE.EMAIL_EXISTED);
       }
+
+      // Check if username exists
+      user = await this.usersService.findByUsername(username);
+      if (user) {
+        throw new BadRequestException('Username already exists');
+      }
+
       const password = generateCustomString(12);
       const hashedPassword = this.passwordService.encryptPassword(password);
       const userId = generateId().toLocaleLowerCase();
@@ -160,7 +175,7 @@ export class AuthService {
         createAt: new Date().getTime(),
         updateAt: new Date().getTime(),
         deleteAt: 0,
-        username: email.substring(0, email.indexOf('@')),
+        username: username,
         password: hashedPassword,
         authData: '',
         authService: '',
