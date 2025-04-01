@@ -47,7 +47,7 @@ export class TokenService {
 
   generateToken(payload: any, key: string, expiresIn: string) {
     const options: jwt.SignOptions = {
-      expiresIn: Number(expiresIn),
+      expiresIn: expiresIn,
       algorithm: 'RS256',
       allowInsecureKeySizes: true,
     };
@@ -66,7 +66,6 @@ export class TokenService {
     const currentDate = new Date();
 
     const expireAt = new Date();
-
     expireAt.setMonth(
       currentDate.getMonth() === 12 ? 1 : currentDate.getMonth() + 1,
     );
@@ -97,7 +96,6 @@ export class TokenService {
     );
 
     token.refreshToken = refreshToken;
-
     await this.save(token);
 
     return {
