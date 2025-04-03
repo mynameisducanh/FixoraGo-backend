@@ -11,7 +11,10 @@ const ormconfig = {
   port: parseInt(process.env.DB_PORT ?? '3306'),
   synchronize: false,
   maxQueryExecutionTime: 300,
-  entities: ['dist/database/entities/*.entity{.ts,.js}'],
+  entities: [
+    'dist/database/entities/*.entity{.ts,.js}',
+    'dist/entities/*.entity{.ts,.js}',
+  ],
   migrations: ['dist/database/migration/*{.ts,.js}'],
   cli: {
     migrationsDir: 'src/database/migration',

@@ -8,6 +8,7 @@ import { LoginDto } from 'src/modules/auth/dto/login.dto';
 import { RegisterDto } from 'src/modules/auth/dto/register.dto';
 import { SendEmailDto } from 'src/modules/auth/dto/send-email.dto';
 import { Login } from 'src/modules/auth/types/login.types';
+import { VerifyOtpDto } from 'src/modules/auth/dto/verify-otp.dto';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -45,4 +46,12 @@ export class AuthController {
   ): Promise<boolean> {
     return await this.authService.verifyEmail(tokenObj.token, language);
   }
+
+  // @Post('verify-otp')
+  // async verifyOtp(
+  //   @Body() otp: VerifyOtpDto,
+  //   @Language() language: string,
+  // ): Promise<boolean> {
+  //   return await this.authService.verifyOtp(otp);
+  // }
 }

@@ -27,6 +27,7 @@ import { ListDetailServiceModule } from 'src/modules/listDetailService/listDetai
 import { PriceServiceModule } from 'src/modules/pricesService/pricesService.module';
 import { RequestServiceModule } from 'src/modules/requestService/requestService.module';
 import { ChatModule } from 'src/modules/chat/chat.module';
+import { NewsModule } from 'src/modules/news/news.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ChatModule } from 'src/modules/chat/chat.module';
     PriceServiceModule,
     RequestServiceModule,
     ChatModule,
+    NewsModule
   ],
   controllers: [AppController],
   providers: [AppService],
