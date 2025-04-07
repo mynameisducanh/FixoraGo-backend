@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatRoom, RoomStatus } from 'src/database/entities/chat-room.entity';
 import { ChatMessage } from 'src/database/entities/chat-message.entity';
+import { CreateChatRoomDto } from 'src/modules/chat/dto/create-room.dto';
+import { DataResponse, MessageResponse } from 'src/common/types/response';
 
 @Injectable()
 export class ChatService {
@@ -13,9 +15,18 @@ export class ChatService {
     private messageRepository: Repository<ChatMessage>,
   ) {}
 
-  async createRoom(userId: string, staffId: string): Promise<ChatRoom> {
-    const room = this.roomRepository.create({ userId, staffId });
-    return this.roomRepository.save(room);
+  async createRoom(body: CreateChatRoomDto): Promise<DataResponse<ChatRoom>> {
+    const existingRoom = {
+      userId: body.userId,
+      staffId: body.staffId,
+      status: RoomStatus.ACTIVE,
+    };
+    const data = await this.roomRepository.save(existingRoom);
+    return {
+      data,
+      statusCode: HttpStatus.OK,
+      message: 'Tạo chat room thành công',
+    };
   }
 
   async closeRoom(roomId: string): Promise<ChatRoom> {
