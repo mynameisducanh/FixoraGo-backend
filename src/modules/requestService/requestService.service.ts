@@ -10,10 +10,12 @@ import {
 } from 'src/database/entities/request-service.entity';
 import { RequestServiceResponse } from 'src/modules/requestService/types/requestService.types';
 import { GetAllRequestServiceDto } from 'src/modules/requestService/dto/get-all-request-service.dto';
+import { CloudService } from 'src/helpers/cloud.helper';
 
 @Injectable()
 export class RequestServiceService {
   constructor(
+    private readonly cloudService: CloudService,
     @InjectRepository(RequestServiceEntity)
     private readonly requestServiceRes: Repository<RequestServiceEntity>,
   ) {}
@@ -26,7 +28,9 @@ export class RequestServiceService {
 
   async createRequestService(
     body: CreateRequestServiceDto,
+    file: Express.Multer.File,
   ): Promise<MessageResponse> {
+    const fileUrl = await this.cloudService.uploadLottieFilesToCloud(file);
     const newFileRecord: DeepPartial<RequestServiceEntity> = {
       userId: body.userId,
       staffId: body.staffId,
@@ -34,6 +38,7 @@ export class RequestServiceService {
       listDetailService: body.listDetailService,
       priceService: body.priceService,
       typeService: body.typeService,
+      fileImage: fileUrl,
       note: body.note,
       status: ServiceStatus.PENDING,
       createAt: new Date().getTime(),
