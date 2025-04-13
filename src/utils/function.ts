@@ -33,3 +33,7 @@ export const generateOTP = (length = 6, expiresIn = 5 * 60 * 1000) => {
   
   return { otp, expiresAt };
 }
+
+export const temp = () =>{
+  //tempcode
+}
