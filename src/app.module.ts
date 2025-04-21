@@ -28,6 +28,8 @@ import { PriceServiceModule } from 'src/modules/pricesService/pricesService.modu
 import { RequestServiceModule } from 'src/modules/requestService/requestService.module';
 import { ChatModule } from 'src/modules/chat/chat.module';
 import { NewsModule } from 'src/modules/news/news.module';
+import { RequestConfirmModule } from './modules/requestConfirm/requestConfirm.module';
+import { RequestConfirmServiceModule } from './modules/requestConfirmService/requestConfirmService.module';
 
 @Module({
   imports: [
@@ -61,7 +63,9 @@ import { NewsModule } from 'src/modules/news/news.module';
     PriceServiceModule,
     RequestServiceModule,
     ChatModule,
-    NewsModule
+    NewsModule,
+    RequestConfirmModule,
+    RequestConfirmServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

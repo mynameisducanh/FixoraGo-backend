@@ -85,4 +85,47 @@ export class CloudService {
       return null;
     }
   }
+
+  async deleteFileFromCloud(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<boolean> {
+    try {
+      return new Promise((resolve, reject) => {
+        cloudinary.uploader.destroy(
+          publicId,
+          { resource_type: resourceType },
+          (error, result) => {
+            if (error) {
+              console.error('Lỗi xóa file:', error);
+              reject(false);
+            } else {
+              console.log('Xóa thành công:', result);
+              resolve(result.result === 'ok');
+            }
+          }
+        );
+      });
+    } catch (error) {
+      console.error('Lỗi xóa file:', error);
+      return false;
+    }
+  }
+
+  extractPublicIdFromUrl(url: string): string | null {
+    try {
+      const parts = url.split('/');
+      const filename = parts[parts.length - 1]; // abc123def456.json
+      const publicId = filename.split('.')[0];  // abc123def456
+      return publicId;
+    } catch (error) {
+      console.error('Lỗi khi tách public_id:', error);
+      return null;
+    }
+  }
+
+  async deleteFileByUrl(url: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<boolean> {
+    const publicId = this.extractPublicIdFromUrl(url);
+    if (!publicId) return false;
+  
+    return this.deleteFileFromCloud(publicId, resourceType);
+  }
+  
 }
