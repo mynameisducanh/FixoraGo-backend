@@ -29,7 +29,7 @@ export class RequestServiceService {
   ): Promise<MessageResponse> {
     const newFileRecord: DeepPartial<RequestServiceEntity> = {
       userId: body.userId,
-      staffId: body.staffId,
+      staffId: '',
       nameService: body.nameService,
       listDetailService: body.listDetailService,
       priceService: body.priceService,

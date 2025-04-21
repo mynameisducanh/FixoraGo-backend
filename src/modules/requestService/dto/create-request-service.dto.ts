@@ -7,9 +7,6 @@ export class CreateRequestServiceDto {
   userId: string;
 
   @ApiPropertyOptional()
-  staffId: string;
-
-  @ApiPropertyOptional()
   @IsOptional()
   typeService: string;
 
