@@ -11,6 +11,5 @@ export class LoginDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  @MinLength(8)
   password: string;
 }
