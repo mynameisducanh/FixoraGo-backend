@@ -1,0 +1,11 @@
+import { IsNotEmpty, IsString, Length } from 'class-validator';
+
+export class VerifyOtpResetDto {
+  @IsNotEmpty()
+  @IsString()
+  @Length(6, 6, { message: 'OTP must be exactly 6 characters long' })
+  otp: string;
+  
+  @IsNotEmpty()
+  email: string;
+}

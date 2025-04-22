@@ -58,7 +58,7 @@ export const MESSAGE = {
   HARD_DELETE_USER_SUCCESS: 'Xóa vĩnh viễn người dùng thành công',
   HARD_DELETE_USER_FAIL: 'Xóa vĩnh viễn người dùng thất bại',
 
-  FILES_UPLOADED_SUCCESS:'Upload icon thành công'
+  FILES_UPLOADED_SUCCESS: 'Upload icon thành công',
 };
 
 // mail footer
@@ -116,6 +116,33 @@ export const CONFIRM_REGISTER = (
       <a href="${otp}" target="_blank">認証リンク</a><br><br>
       このリンクは15分間有効です。この時間内にリンクをクリックしなかった場合、再認証をリクエストする必要があります。<br><br>
       リンクをクリック後、アカウントが認証され、利用を開始することができます。<br><br>
+      ${MAIL_FOOTER(language)}
+    `,
+  };
+
+  return { titles: titles[language] || '', content: content[language] || '' };
+};
+
+export const RESET_PASSWORD = (
+  language: string,
+  fullName: string,
+  otp: string,
+) => {
+  const titles: Record<string, string> = {
+    vi: 'Xác nhận đặt lại mật khẩu tài khoản',
+    en: 'Password Reset Confirmation',
+    ja: 'パスワードリセット確認',
+  };
+  const content: Record<string, string> = {
+    vi: `
+      Xin chào <strong>${fullName}</strong>,<br><br>
+      Cảm ơn bạn đã quan tâm và sử dụng <strong>InWEB - Giải pháp toàn diện cho thiết kế CAD ở trên web.</strong><br><br>
+      Chúng tôi xin xác nhận đã nhận được yêu cầu về việc lấy lại mật khẩu cho tài khoản của bạn.<br>
+      Để thiết lập lại mật khẩu, bạn vui lòng nhấn vào liên kết sau đây để đặt lại mật khẩu mới:<br>
+      Chúng tôi đang thiết lập lại mật khẩu cho bạn, mã OTP của bạn là:<br>
+      <div style="text-align: center; font-size: 24px; font-weight: bold; color:rgb(0, 0, 0); padding: 10px; background: #f0f0f0; border-radius: 5px;">
+          ${otp}
+        </div>
       ${MAIL_FOOTER(language)}
     `,
   };
