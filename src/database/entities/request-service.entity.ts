@@ -34,8 +34,14 @@ export class RequestServiceEntity extends BaseTimestamp {
   @Column({ name: 'priceService', nullable: true })
   priceService: string;
 
+  @Column({ name: 'fileImage', nullable: true })
+  fileImage: string;
+
   @Column({ name: 'typeService', nullable: true })
   typeService: string;
+
+  @Column({ name: 'address', nullable: true })
+  address: string;
 
   @Column('text', { name: 'note', nullable: true })
   note: string;
