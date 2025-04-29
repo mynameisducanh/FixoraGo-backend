@@ -18,6 +18,41 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UserController {
   constructor(private readonly userService: UsersService) {}
 
+  @Get('count')
+  @ApiOperation({ summary: 'Get total number of users' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the total number of users in the system',
+    schema: {
+      type: 'object',
+      properties: {
+        total: {
+          type: 'number',
+          description: 'Total number of users',
+        },
+      },
+    },
+  })
+  
+  async countUsers(): Promise<{ total: number }> {
+    const total = await this.userService.countUsers();
+    return { total };
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a list of all users in the system',
+    type: [UserResponse],
+  })
+  async getAllUsers(): Promise<UserResponse[]> {
+    const users = await this.userService.getAllUsers();
+    return users.map(user => plainToClass(UserResponse, user, {
+      excludeExtraneousValues: true,
+    }));
+  }
+
   @Get('me')
   async getMyself(@Req() req: any): Promise<UserResponse> {
     const { userLogged } = req;
@@ -77,4 +112,6 @@ export class UserController {
       excludeExtraneousValues: true,
     });
   }
+
+  
 }
