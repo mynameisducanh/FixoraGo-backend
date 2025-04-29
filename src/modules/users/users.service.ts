@@ -111,4 +111,31 @@ export class UsersService {
 
     return await this.userRes.save(user);
   }
+
+  async countUsers(): Promise<number> {
+    return await this.userRes.count();
+  }
+
+  async getAllUsers(): Promise<UsersEntity[]> {
+    return await this.userRes
+      .createQueryBuilder('user')
+      .select([
+        'user.Id as id',
+        'user.Username as username',
+        'user.FirstName as firstName',
+        'user.LastName as lastName',
+        'user.Email as email',
+        'user.EmailVerified as emailVerified',
+        'user.PhoneNumber as phoneNumber',
+        'user.PhoneVerified as phoneVerified',
+        'user.InfoVerified as infoVerified',
+        'user.Roles as roles',
+        'user.Address as address',
+        'user.CurrentLocation as currentLocation',
+        'user.Status as status',
+        'user.CreateAt as createAt',
+        'user.LastCheckIn as lastCheckIn',
+      ])
+      .getRawMany();
+  }
 }
