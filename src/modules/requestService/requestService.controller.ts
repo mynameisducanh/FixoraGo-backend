@@ -8,6 +8,7 @@ import {
   Param,
   UploadedFile,
   UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CreateRequestServiceDto } from 'src/modules/requestService/dto/create-request-service.dto';
 import { MessageResponse } from 'src/common/types/response';
@@ -15,7 +16,7 @@ import { ListDetailServiceResponse } from 'src/modules/listDetailService/types/l
 import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 import { RequestServiceResponse } from 'src/modules/requestService/types/requestService.types';
 import { GetAllRequestServiceDto } from 'src/modules/requestService/dto/get-all-request-service.dto';
-import { FileInterceptor } from '@nestjs/platform-express/multer';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express/multer';
 import { ApiConsumes } from '@nestjs/swagger';
 
 @Controller('requestService')
@@ -23,12 +24,13 @@ export class RequestServiceController {
   constructor(private readonly requestServiceService: RequestServiceService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FilesInterceptor('file'))
   @ApiConsumes('multipart/form-data; charset=UTF-8')
   async create(
     @Body() body: CreateRequestServiceDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() file: Express.Multer.File[],
   ): Promise<MessageResponse> {
+    console.log(body)
     return await this.requestServiceService.createRequestService(body, file);
   }
 

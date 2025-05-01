@@ -14,19 +14,13 @@ export class PriceServiceResponse {
   unitService: string;
 
   @Expose()
-  price: string;
+  time: string;
 
   @Expose()
-  min_price: string;
-
-  @Expose()
-  max_price: string;
+  temp: string;
 
   @Expose()
   imageUrl: string;
-
-  @Expose()
-  totalUse: string;
 
   @Expose()
   @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))

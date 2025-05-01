@@ -3,8 +3,8 @@ import { BaseTimestamp } from 'src/database/entities/base-timestamp';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Exclude()
-@Entity('pricesService')
-export class PricesServiceEntity extends BaseTimestamp {
+@Entity('typeService')
+export class TypeServiceEntity extends BaseTimestamp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -17,18 +17,12 @@ export class PricesServiceEntity extends BaseTimestamp {
   @Column({ type: 'varchar', length: 255, name: 'name', nullable: true })
   name: string;
 
-  @Column({ name: 'price', nullable: true })
-  price: string;
-
-  @Column({ name: 'min_price', nullable: true })
-  min_price: string;
-
-  @Column({ name: 'max_price', nullable: true })
-  max_price: string;
+  @Column({ name: 'time', nullable: true })
+  time: string;
 
   @Column({ name: 'ImageUrl', nullable: true })
   imageUrl: string;
 
-  @Column({ name: 'TotalUse', nullable: true })
-  totalUse: string;
+  @Column({ name: 'temp', nullable: true })
+  temp: string;
 }

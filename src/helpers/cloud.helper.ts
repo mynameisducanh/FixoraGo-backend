@@ -51,7 +51,7 @@ export class CloudService {
     }
   }
 
-  async uploadFilesToCloud(
+  async uploadFileToCloud(
     file: Express.Multer.File,
   ): Promise<string | null> {
     try {
@@ -80,6 +80,47 @@ export class CloudService {
         readableStream.push(null);
         readableStream.pipe(uploadStream);
       });
+    } catch (error) {
+      console.error('Lỗi upload:', error);
+      return null;
+    } 
+  }
+  
+  async uploadFilesToCloud(
+    files: Express.Multer.File[],
+  ): Promise<string[] | null> {
+    try {
+      const uploadPromises = files.map((file) => {
+        const id = uuidv4();
+        
+        return new Promise<string>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { public_id: id },
+            (error, result: UploadApiResponse) => {
+              if (error) {
+                console.error('Lỗi upload:', error);
+                reject(error);
+              } else {
+                const optimizeUrl = cloudinary.url(id, {
+                  fetch_format: 'auto',
+                  quality: 'auto',
+                });
+                console.log(optimizeUrl);
+                resolve(optimizeUrl);
+              }
+            },
+          );
+  
+          const readableStream = new Readable();
+          readableStream.push(file.buffer);
+          readableStream.push(null);
+          readableStream.pipe(uploadStream);
+        });
+      });
+  
+      // Đợi tất cả upload xong
+      const urls = await Promise.all(uploadPromises);
+      return urls;
     } catch (error) {
       console.error('Lỗi upload:', error);
       return null;

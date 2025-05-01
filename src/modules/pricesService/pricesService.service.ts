@@ -5,28 +5,26 @@ import { MessageResponse } from 'src/common/types/response';
 import { plainToClass } from 'class-transformer';
 import { PriceServiceResponse } from 'src/modules/pricesService/types/priceService.types';
 import { CreatePricesServiceDto } from 'src/modules/pricesService/dto/create-icon-service.dto';
-import { PricesServiceEntity } from 'src/database/entities/prices-service.entity';
+import { TypeServiceEntity } from 'src/database/entities/type-service.entity';
 
 @Injectable()
 export class PriceServiceService {
   constructor(
-    @InjectRepository(PricesServiceEntity)
-    private readonly priceServiceRes: Repository<PricesServiceEntity>,
+    @InjectRepository(TypeServiceEntity)
+    private readonly priceServiceRes: Repository<TypeServiceEntity>,
   ) {}
 
   async save(
-    service: DeepPartial<PricesServiceEntity>,
-  ): Promise<PricesServiceEntity> {
+    service: DeepPartial<TypeServiceEntity>,
+  ): Promise<TypeServiceEntity> {
     return await this.priceServiceRes.save(service);
   }
 
-  async getOne(id: string): Promise<PricesServiceEntity> {
-    const priceService = await this.priceServiceRes.findOne({
-      where: { id },
-    });
+  async getOne(id: string): Promise<TypeServiceEntity> {
+    const priceService = await this.priceServiceRes.findOne({ where: { id } });
     return priceService;
   }
-  async getOneByUnitId(unitService: string): Promise<PricesServiceEntity> {
+  async getOneByUnitId(unitService: string): Promise<TypeServiceEntity> {
     try {
       const priceService = await this.priceServiceRes.findOne({
         where: { unitService },
@@ -38,15 +36,11 @@ export class PriceServiceService {
     file: Express.Multer.File,
     body: CreatePricesServiceDto,
   ): Promise<MessageResponse> {
-    const newFileRecord: DeepPartial<PricesServiceEntity> = {
+    const newFileRecord: DeepPartial<TypeServiceEntity> = {
       name: body.name,
       serviceId: body.serviceId,
       unitService: body.unitService,
-      price: body.price,
-      min_price: body.min_price,
-      max_price: body.max_price,
-      imageUrl: '',
-      totalUse: '',
+      time: body.time,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
     };
@@ -60,23 +54,20 @@ export class PriceServiceService {
   async getAll(): Promise<PriceServiceResponse[]> {
     try {
       const queryResult =
-        this.priceServiceRes.createQueryBuilder('priceService');
+        this.priceServiceRes.createQueryBuilder('typeService');
 
       const data = queryResult
-        .orderBy('priceService.UpdateAt', 'ASC')
-        .addOrderBy('priceService.CreateAt', 'ASC')
+        .orderBy('typeService.UpdateAt', 'ASC')
+        .addOrderBy('typeService.CreateAt', 'ASC')
         .addSelect([
-          'priceService.id AS id',
-          'priceService.CreateAt AS createAt',
-          'priceService.UpdateAt AS updateAt',
-          'priceService.Name AS name',
-          'priceService.ServiceId AS serviceId',
-          'priceService.UnitService AS unitService',
-          'priceService.Price AS price',
-          'priceService.Min_price AS min_price',
-          'priceService.Max_price AS max_price',
-          'priceService.ImageUrl AS imageUrl',
-          'priceService.TotalUse AS totalUse',
+          'typeService.id AS id',
+          'typeService.CreateAt AS createAt',
+          'typeService.UpdateAt AS updateAt',
+          'typeService.Name AS name',
+          'typeService.ServiceId AS serviceId',
+          'typeService.UnitService AS unitService',
+          'typeService.time AS time',
+          'typeService.ImageUrl AS imageUrl',
         ]);
 
       const result = await data.getRawMany();
@@ -92,30 +83,29 @@ export class PriceServiceService {
   ): Promise<PriceServiceResponse[]> {
     try {
       const queryResult =
-        this.priceServiceRes.createQueryBuilder('priceService');
+        this.priceServiceRes.createQueryBuilder('typeService');
 
+      console.log(unitService);
       const data = queryResult
-        .where('priceService.UnitService = :unitService', { unitService })
-        .orderBy('priceService.UpdateAt', 'ASC')
-        .addOrderBy('priceService.CreateAt', 'ASC')
+        .where('typeService.UnitService = :unitService', { unitService })
+        .orderBy('typeService.UpdateAt', 'ASC')
+        .addOrderBy('typeService.CreateAt', 'ASC')
         .addSelect([
-          'priceService.id AS id',
-          'priceService.CreateAt AS createAt',
-          'priceService.UpdateAt AS updateAt',
-          'priceService.Name AS name',
-          'priceService.ServiceId AS serviceId',
-          'priceService.UnitService AS unitService',
-          'priceService.Price AS price',
-          'priceService.Min_price AS min_price',
-          'priceService.Max_price AS max_price',
-          'priceService.ImageUrl AS imageUrl',
-          'priceService.TotalUse AS totalUse',
+          'typeService.id AS id',
+          'typeService.CreateAt AS createAt',
+          'typeService.UpdateAt AS updateAt',
+          'typeService.Name AS name',
+          'typeService.ServiceId AS serviceId',
+          'typeService.UnitService AS unitService',
+          'typeService.time AS time',
+          'typeService.ImageUrl AS imageUrl',
         ]);
 
       const result = await data.getRawMany();
       const items = plainToClass(PriceServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+      console.log(items);
       return items;
     } catch (error) {}
   }

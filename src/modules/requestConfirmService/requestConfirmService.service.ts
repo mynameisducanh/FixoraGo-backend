@@ -32,7 +32,7 @@ export class RequestConfirmServiceService {
   ): Promise<MessageResponse> {
     let imageUrl = '';
     if (file) {
-      imageUrl = await this.cloudService.uploadFilesToCloud(file);
+      imageUrl = await this.cloudService.uploadFileToCloud(file);
     }
 
     const newService: DeepPartial<RequestConfirmServiceEntity> = {
@@ -141,7 +141,7 @@ export class RequestConfirmServiceService {
         if (service.image) {
           await this.cloudService.deleteFileByUrl(service.image, 'image');
         }
-        const imageUrl = await this.cloudService.uploadFilesToCloud(file);
+        const imageUrl = await this.cloudService.uploadFileToCloud(file);
         updateData.image = imageUrl;
       }
 
