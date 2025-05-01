@@ -28,17 +28,21 @@ export class RequestServiceService {
 
   async createRequestService(
     body: CreateRequestServiceDto,
-    file: Express.Multer.File,
+    files: Express.Multer.File[],
   ): Promise<MessageResponse> {
-    const fileUrl = await this.cloudService.uploadLottieFilesToCloud(file);
+    let fileUrl;
+    if (files) {
+      fileUrl = await this.cloudService.uploadFilesToCloud(files);
+    }
     const newFileRecord: DeepPartial<RequestServiceEntity> = {
       userId: body.userId,
-      staffId: '',
+      staffId: null,
       nameService: body.nameService,
       listDetailService: body.listDetailService,
       priceService: body.priceService,
       typeService: body.typeService,
-      fileImage: fileUrl,
+      calender: body.calender,
+      fileImage: JSON.stringify(fileUrl),
       note: body.note,
       status: ServiceStatus.PENDING,
       createAt: new Date().getTime(),

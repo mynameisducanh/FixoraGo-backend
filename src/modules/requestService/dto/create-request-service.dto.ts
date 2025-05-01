@@ -24,5 +24,9 @@ export class CreateRequestServiceDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  calender: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   note: string;
 }

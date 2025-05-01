@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express/multer';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import multer from 'multer';
-import { PricesServiceEntity } from 'src/database/entities/prices-service.entity';
+import { TypeServiceEntity } from 'src/database/entities/type-service.entity';
 import { CloudService } from 'src/helpers/cloud.helper';
 import { PriceServiceController } from 'src/modules/pricesService/pricesService.controller';
 import { PriceServiceService } from 'src/modules/pricesService/pricesService.service';
@@ -12,10 +12,8 @@ import { PriceServiceService } from 'src/modules/pricesService/pricesService.ser
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([PricesServiceEntity]),
-    MulterModule.register({
-      storage: multer.memoryStorage(),
-    }),
+    TypeOrmModule.forFeature([TypeServiceEntity]),
+    MulterModule.register({ storage: multer.memoryStorage() }),
   ],
   providers: [PriceServiceService, CloudService],
   controllers: [PriceServiceController],

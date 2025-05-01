@@ -22,7 +22,7 @@ export class ServicesService {
     body: CreateServiceDto,
     file: Express.Multer.File,
   ): Promise<MessageResponse> {
-    const urlImage = await this.cloudService.uploadFilesToCloud(file);
+    const urlImage = await this.cloudService.uploadFileToCloud(file);
 
     const serviceData = {
       categoryId: body.categoryId,
@@ -33,7 +33,7 @@ export class ServicesService {
       totalViews: 0,
       rating: 5,
       totalReviews: 0,
-      imageUrl: urlImage,
+      imageUrl: urlImage[0], // Use the first image URL from the array
       isActive: true,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
