@@ -37,8 +37,8 @@ export class RequestServiceEntity extends BaseTimestamp {
   @Column({ name: 'fileImage', nullable: true })
   fileImage: string;
 
-  @Column({ name: 'typeService', nullable: true })
-  typeService: string;
+  @Column({ name: 'typeEquipment', nullable: true })
+  typeEquipment: string;
 
   @Column({ name: 'address', nullable: true })
   address: string;

@@ -51,9 +51,7 @@ export class CloudService {
     }
   }
 
-  async uploadFileToCloud(
-    file: Express.Multer.File,
-  ): Promise<string | null> {
+  async uploadFileToCloud(file: Express.Multer.File): Promise<string | null> {
     try {
       const id = uuidv4();
 
@@ -67,7 +65,7 @@ export class CloudService {
             } else {
               const optimizeUrl = cloudinary.url(id, {
                 fetch_format: 'auto',
-                quality: 'auto'
+                quality: 'auto',
               });
               console.log(optimizeUrl);
               resolve(optimizeUrl);
@@ -83,19 +81,21 @@ export class CloudService {
     } catch (error) {
       console.error('Lỗi upload:', error);
       return null;
-    } 
+    }
   }
-  
+
   async uploadFilesToCloud(
     files: Express.Multer.File[],
   ): Promise<string[] | null> {
     try {
       const uploadPromises = files.map((file) => {
         const id = uuidv4();
-        
+
         return new Promise<string>((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
-            { public_id: id },
+            {
+              public_id: id,
+            },
             (error, result: UploadApiResponse) => {
               if (error) {
                 console.error('Lỗi upload:', error);
@@ -110,14 +110,14 @@ export class CloudService {
               }
             },
           );
-  
+
           const readableStream = new Readable();
           readableStream.push(file.buffer);
           readableStream.push(null);
           readableStream.pipe(uploadStream);
         });
       });
-  
+
       // Đợi tất cả upload xong
       const urls = await Promise.all(uploadPromises);
       return urls;
@@ -127,7 +127,10 @@ export class CloudService {
     }
   }
 
-  async deleteFileFromCloud(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<boolean> {
+  async deleteFileFromCloud(
+    publicId: string,
+    resourceType: 'image' | 'video' | 'raw' = 'image',
+  ): Promise<boolean> {
     try {
       return new Promise((resolve, reject) => {
         cloudinary.uploader.destroy(
@@ -141,7 +144,7 @@ export class CloudService {
               console.log('Xóa thành công:', result);
               resolve(result.result === 'ok');
             }
-          }
+          },
         );
       });
     } catch (error) {
@@ -154,7 +157,7 @@ export class CloudService {
     try {
       const parts = url.split('/');
       const filename = parts[parts.length - 1]; // abc123def456.json
-      const publicId = filename.split('.')[0];  // abc123def456
+      const publicId = filename.split('.')[0]; // abc123def456
       return publicId;
     } catch (error) {
       console.error('Lỗi khi tách public_id:', error);
@@ -162,11 +165,13 @@ export class CloudService {
     }
   }
 
-  async deleteFileByUrl(url: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<boolean> {
+  async deleteFileByUrl(
+    url: string,
+    resourceType: 'image' | 'video' | 'raw' = 'image',
+  ): Promise<boolean> {
     const publicId = this.extractPublicIdFromUrl(url);
     if (!publicId) return false;
-  
+
     return this.deleteFileFromCloud(publicId, resourceType);
   }
-  
 }
