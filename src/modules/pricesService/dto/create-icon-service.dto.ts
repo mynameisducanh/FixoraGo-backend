@@ -16,15 +16,7 @@ export class CreatePricesServiceDto {
 
   @IsString()
   @IsOptional()
-  price: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  min_price: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  max_price: string;
+  time: string;
 
   @ApiProperty()
   imageUrl: Express.Multer.File;

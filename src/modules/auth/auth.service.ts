@@ -5,9 +5,14 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Role, timeZoneObj } from 'src/common/constants/enum';
-import { CONFIRM_REGISTER, MESSAGE } from 'src/common/constants/message';
+import {
+  CONFIRM_REGISTER,
+  MESSAGE,
+  RESET_PASSWORD,
+} from 'src/common/constants/message';
 import { MessageResponse } from 'src/common/types/response';
 import { PasswordService } from 'src/helpers/bcrypt.helper';
 import { RegisterDto } from 'src/modules/auth/dto/register.dto';
@@ -18,10 +23,13 @@ import { generateCustomString, generateId } from 'src/utils/function';
 import { MailerService } from 'src/helpers/mailer.helper';
 import { TokenService } from 'src/modules/tokens/token.service';
 import { ConfigService } from '@nestjs/config';
-import { SendEmailDto } from 'src/modules/auth/dto/send-email.dto';
+import { SendUsernameDto } from 'src/modules/auth/dto/send-email.dto';
 import { LoginDto } from 'src/modules/auth/dto/login.dto';
 import { Login } from 'src/modules/auth/types/login.types';
 import { OtpService } from 'src/modules/otp/otp.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -126,15 +134,6 @@ export class AuthService {
         timezone: timeZoneObj,
       });
 
-      const payload = {
-        userId: userId,
-        email,
-      };
-
-      const { accessToken } = await this.tokenService.createOne(payload);
-      const confirmUrl = `${this.configService.get<string>(
-        'app.client_url',
-      )}/verifyEmail?token=${accessToken}`;
       const otp = await this.otpService.createOtp(email);
       const fullName = username;
 
@@ -211,45 +210,45 @@ export class AuthService {
     }
   }
 
-  async sendVerifyEmail(
-    request: SendEmailDto,
-    language: string,
-  ): Promise<boolean> {
-    try {
-      const { email } = request;
-      const user = await this.usersService.findByEmail(email);
+  // async sendVerifyEmail(
+  //   request: SendEmailDto,
+  //   language: string,
+  // ): Promise<boolean> {
+  //   try {
+  //     const { email } = request;
+  //     const user = await this.usersService.findByEmail(email);
 
-      if (!user) {
-        throw new NotFoundException(MESSAGE.ACCOUNT_NOT_EXISTED);
-      }
+  //     if (!user) {
+  //       throw new NotFoundException(MESSAGE.ACCOUNT_NOT_EXISTED);
+  //     }
 
-      if (user.deleteAt > 0) {
-        throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
-      }
+  //     if (user.deleteAt > 0) {
+  //       throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+  //     }
 
-      if (user.emailVerified === 1) {
-        throw new BadRequestException(MESSAGE.ACCOUNT_CONFIRMED);
-      }
+  //     if (user.emailVerified === 1) {
+  //       throw new BadRequestException(MESSAGE.ACCOUNT_CONFIRMED);
+  //     }
 
-      const claims = { userId: user.id, email: user.email };
+  //     const claims = { userId: user.id, email: user.email };
 
-      const { accessToken } = await this.tokenService.createOne(claims);
+  //     const { accessToken } = await this.tokenService.createOne(claims);
 
-      const confirmUrl = `${this.configService.get<string>(
-        'app.client_url',
-      )}/${language}/send-verify-email?token=${accessToken}`;
+  //     const confirmUrl = `${this.configService.get<string>(
+  //       'app.client_url',
+  //     )}/${language}/send-verify-email?token=${accessToken}`;
 
-      const fullName = `${user.firstName} ${user.lastName}`;
+  //     const fullName = `${user.firstName} ${user.lastName}`;
 
-      const html = CONFIRM_REGISTER(language, fullName, confirmUrl);
+  //     const html = CONFIRM_REGISTER(language, fullName, confirmUrl);
 
-      this.mailService.sendMail(user.email, html.titles, html.content);
+  //     this.mailService.sendMail(user.email, html.titles, html.content);
 
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  }
+  //     return true;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   async verifyEmail(token: string, language: string): Promise<boolean> {
     try {
@@ -318,6 +317,152 @@ export class AuthService {
       }
 
       return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async sendResetPasswordByUsername(request: SendUsernameDto): Promise<any> {
+    try {
+      const { username } = request;
+      const user = await this.usersService.findByUsername(username);
+
+      if (!user) {
+        throw new BadRequestException('Không tồn tài tài khoản này');
+      }
+
+      if (user.deleteAt > 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+      }
+
+      if (user.emailVerified === 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_NOT_ACTIVATED);
+      }
+
+      await this.otpService.createOtp(user.email);
+      const otp = await this.otpService.createOtp(user.email);
+      const fullName = username;
+
+      const html = RESET_PASSWORD('vi', fullName, otp.otp);
+
+      this.mailService.sendMail(user.email, html.titles, html.content);
+      return {
+        statusCode: HttpStatus.OK,
+        email: user.email,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyOtpResetPassword(otp: string, email: string): Promise<any> {
+    try {
+      const otpDb = await this.otpService.findByEmail(email);
+      const user = await this.usersService.findByEmail(email);
+      if (!otpDb) {
+        throw new BadRequestException('Không tìm thấy OTP!');
+      }
+      if (otp !== otpDb.otp) {
+        throw new BadRequestException('Sai OTP!');
+      }
+
+      if (Date.now() > otpDb.expires) {
+        console.log('OTP đã hết hạn!');
+        await this.otpService.deleteOtps(otpDb);
+        throw new BadRequestException('OTP đã hết hạn!');
+      }
+      await this.otpService.deleteOtps(otpDb);
+      const claims = { userId: user.id, email: user.email };
+
+      const { accessToken } = await this.tokenService.createOne(claims);
+      return {
+        statusCode: HttpStatus.OK,
+        token: accessToken,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resetPassword(request: ResetPasswordDto): Promise<boolean> {
+    try {
+      const { password, token } = request;
+      const tokenData = await this.tokenService.validateToken(token);
+
+      if (!tokenData) {
+        throw new UnauthorizedException(MESSAGE.INVALID_OR_EXPIRED_TOKEN);
+      }
+
+      const user = await this.usersService.findByEmail(tokenData.email);
+
+      if (user.deleteAt > 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+      }
+
+      if (!user) {
+        throw new NotFoundException(MESSAGE.ACCOUNT_NOT_EXISTED);
+      }
+
+      if (user.emailVerified === 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_NOT_ACTIVATED);
+      }
+
+      const hashedPassword = this.passwordService.encryptPassword(password);
+      user.password = hashedPassword;
+      user.lastPasswordUpdate = new Date().getTime();
+      const result = await this.usersService.save(user);
+
+      if (!result) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_RESET_PASSWORD_FAILED);
+      }
+
+      this.tokenService.delete(tokenData.tokenId);
+
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async changePassword(
+    request: ChangePasswordDto,
+    userPayload: JwtPayload,
+  ): Promise<MessageResponse> {
+    try {
+      const { currentPassword, newPassword } = request;
+      const user = await this.usersService.findByEmail(userPayload.email);
+
+      if (!user) {
+        throw new NotFoundException(MESSAGE.ACCOUNT_NOT_EXISTED);
+      }
+
+      if (user.deleteAt > 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_LOCKED);
+      }
+
+      if (user.emailVerified === 0) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_NOT_ACTIVATED);
+      }
+
+      if (
+        !this.passwordService.comparePassword(currentPassword, user.password)
+      ) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_INCORRECT_PASSWORD);
+      }
+
+      const hashedPassword = this.passwordService.encryptPassword(newPassword);
+      user.password = hashedPassword;
+      user.lastPasswordUpdate = new Date().getTime();
+      const result = await this.usersService.save(user);
+
+      if (!result) {
+        throw new BadRequestException(MESSAGE.ACCOUNT_CHANGE_PASSWORD_FAILED);
+      }
+
+      return {
+        statusCode: HttpStatus.OK,
+        message: MESSAGE.ACCOUNT_CHANGE_PASSWORD_SUCCESS,
+      };
     } catch (error) {
       throw error;
     }

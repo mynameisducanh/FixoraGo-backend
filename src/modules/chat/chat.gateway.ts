@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { WsException } from '@nestjs/websockets';
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway
@@ -50,7 +51,7 @@ export class ChatGateway
     @ConnectedSocket() client: Socket,
   ) {
     console.log('typeof data:', typeof data);
-    // 👇 Nếu data là string, parse lại
+    // Nếu data là string, parse lại
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
@@ -71,25 +72,66 @@ export class ChatGateway
     });
 
     client.join(room.data.id);
-    this.server.to(data.staffId).emit('roomCreated', room);
+    client.join(room.data.id); // vẫn giữ nguyên
+    this.server.to(room.data.id).emit('roomCreated', room);
+
     return room;
   }
-
+  
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
+    const { roomId } = data;
+    if (!roomId) throw new WsException('Missing roomId');
+    client.join(roomId);
+    client.emit('joinedRoom', { roomId });
+  }
+  
   @SubscribeMessage('sendMessage')
-  async handleMessage(@MessageBody() message: string) {
-    // const { roomId, senderId, senderName, receiverId, receiverName, content } = data;
+  async handleMessage(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    // Parse nếu là JSON string
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        throw new Error('Invalid JSON payload');
+      }
+    }
 
-    // const message = await this.chatService.saveMessage(
-    //   roomId,
-    //   senderId,
-    //   senderName,
-    //   receiverId,
-    //   receiverName,
-    //   content,
-    // );
+    const { roomId, senderId, senderName, receiverId, receiverName, content } =
+      data;
 
-    // this.server.to(roomId).emit('newMessage', message);
-    this.server.emit('message', message);
+    if (!roomId || !senderId || !receiverId || !content) {
+      throw new Error('Missing required fields');
+    }
+
+    const room = await this.chatService.getRoomById(roomId);
+    if (!room) {
+      throw new Error('Room not found');
+    }
+
+    if (room.status !== 'active') {
+      throw new Error('Room is not active');
+    }
+
+    const savedMessage = await this.chatService.saveMessage({
+      roomId,
+      senderId,
+      senderName,
+      receiverId,
+      receiverName,
+      content,
+    });
+
+    this.server.to(roomId).emit('newMessage', {
+      senderId,
+      senderName,
+      receiverId,
+      receiverName,
+      content,
+    });
   }
 
   @SubscribeMessage('closeRoom')

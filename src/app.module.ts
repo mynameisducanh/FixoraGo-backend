@@ -30,6 +30,7 @@ import { ChatModule } from 'src/modules/chat/chat.module';
 import { NewsModule } from 'src/modules/news/news.module';
 import { RequestConfirmModule } from './modules/requestConfirm/requestConfirm.module';
 import { RequestConfirmServiceModule } from './modules/requestConfirmService/requestConfirmService.module';
+import { ServiceReviewModule } from './modules/serviceReview/service-review.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { RequestConfirmServiceModule } from './modules/requestConfirmService/req
     NewsModule,
     RequestConfirmModule,
     RequestConfirmServiceModule,
+    ServiceReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

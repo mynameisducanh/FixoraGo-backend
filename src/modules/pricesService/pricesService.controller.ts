@@ -15,7 +15,7 @@ import { ApiConsumes } from '@nestjs/swagger';
 import { CreatePricesServiceDto } from 'src/modules/pricesService/dto/create-icon-service.dto';
 import { PriceServiceService } from 'src/modules/pricesService/pricesService.service';
 import { PriceServiceResponse } from 'src/modules/pricesService/types/priceService.types';
-import { PricesServiceEntity } from 'src/database/entities/prices-service.entity';
+import { TypeServiceEntity } from 'src/database/entities/type-service.entity';
 
 @Controller('pricesService')
 export class PriceServiceController {
@@ -44,12 +44,12 @@ export class PriceServiceController {
   }
 
   @Get('detail/:id')
-  async getOne(@Param('id') id: string): Promise<PricesServiceEntity> {
+  async getOne(@Param('id') id: string): Promise<TypeServiceEntity> {
     return await this.pricesService.getOne(id);
   }
 
   @Get('unit/:unit')
-  async getOneByUnit(@Param('unit') unit: string): Promise<PricesServiceEntity> {
+  async getOneByUnit(@Param('unit') unit: string): Promise<TypeServiceEntity> {
     return await this.pricesService.getOneByUnitId(unit);
   }
   // @Put(':id')

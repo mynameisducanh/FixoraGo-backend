@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import multer from 'multer';
 import { ListDetailServiceEntity } from 'src/database/entities/list-detail-service.entity';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
+import { CloudService } from 'src/helpers/cloud.helper';
 import { ListDetailServiceController } from 'src/modules/listDetailService/listDetailService.controller';
 import { ListDetailServiceService } from 'src/modules/listDetailService/listDetailService.service';
 import { RequestServiceController } from 'src/modules/requestService/requestService.controller';
@@ -19,7 +20,7 @@ import { RequestServiceService } from 'src/modules/requestService/requestService
       storage: multer.memoryStorage(),
     }),
   ],
-  providers: [RequestServiceService],
+  providers: [RequestServiceService,CloudService],
   controllers: [RequestServiceController],
   exports: [RequestServiceService],
 })
