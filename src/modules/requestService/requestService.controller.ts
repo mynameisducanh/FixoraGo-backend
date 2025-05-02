@@ -9,6 +9,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UploadedFiles,
+  Req,
 } from '@nestjs/common';
 import { CreateRequestServiceDto } from 'src/modules/requestService/dto/create-request-service.dto';
 import { MessageResponse } from 'src/common/types/response';
@@ -25,13 +26,14 @@ export class RequestServiceController {
 
   @Post()
   @UseInterceptors(FilesInterceptor('file'))
-  @ApiConsumes('multipart/form-data; charset=UTF-8')
+  @ApiConsumes('multipart/form-data')
   async create(
-    @Body() body: CreateRequestServiceDto,
-    @UploadedFiles() file: Express.Multer.File[],
+    @Req() req: Request, // dùng req trực tiếp để debug & lấy form-data chuẩn
+    @UploadedFiles() files: Express.Multer.File[],
   ): Promise<MessageResponse> {
-    console.log(body)
-    return await this.requestServiceService.createRequestService(body, file);
+    const body = req.body; // Đây giờ là object key-value thực tế
+    console.log(body);
+    return await this.requestServiceService.createRequestService(body, files);
   }
 
   @Get()

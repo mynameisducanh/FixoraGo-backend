@@ -85,7 +85,6 @@ export class PriceServiceService {
       const queryResult =
         this.priceServiceRes.createQueryBuilder('typeService');
 
-      console.log(unitService);
       const data = queryResult
         .where('typeService.UnitService = :unitService', { unitService })
         .orderBy('typeService.UpdateAt', 'ASC')
@@ -105,7 +104,7 @@ export class PriceServiceService {
       const items = plainToClass(PriceServiceResponse, result, {
         excludeExtraneousValues: true,
       });
-      console.log(items);
+
       return items;
     } catch (error) {}
   }

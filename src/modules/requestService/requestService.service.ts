@@ -27,11 +27,11 @@ export class RequestServiceService {
   }
 
   async createRequestService(
-    body: CreateRequestServiceDto,
+    body: any,
     files: Express.Multer.File[],
   ): Promise<MessageResponse> {
     let fileUrl;
-    if (files) {
+    if (files && files.length > 0) {
       fileUrl = await this.cloudService.uploadFilesToCloud(files);
     }
     const newFileRecord: DeepPartial<RequestServiceEntity> = {
@@ -40,8 +40,9 @@ export class RequestServiceService {
       nameService: body.nameService,
       listDetailService: body.listDetailService,
       priceService: body.priceService,
-      typeService: body.typeService,
+      typeEquipment: body.typeEquipment,
       calender: body.calender,
+      address: body.address,
       fileImage: JSON.stringify(fileUrl),
       note: body.note,
       status: ServiceStatus.PENDING,
