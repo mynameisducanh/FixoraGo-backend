@@ -73,7 +73,7 @@ export class RequestServiceService {
           'requestServices.NameService AS nameService',
           'requestServices.ListDetailService AS listDetailService',
           'requestServices.PriceService AS priceService',
-          'requestServices.TypeService AS typeService',
+          'requestServices.TypeEquipment AS typeEquipment',
           'requestServices.Note AS note',
           'requestServices.Status AS status',
         ]);
@@ -115,7 +115,7 @@ export class RequestServiceService {
           'requestServices.NameService AS nameService',
           'requestServices.ListDetailService AS listDetailService',
           'requestServices.PriceService AS priceService',
-          'requestServices.TypeService AS typeService',
+          'requestServices.TypeEquipment AS typeEquipment',
           'requestServices.Note AS note',
           'requestServices.Status AS status',
         ]);
@@ -143,7 +143,7 @@ export class RequestServiceService {
           'requestServices.NameService AS nameService',
           'requestServices.ListDetailService AS listDetailService',
           'requestServices.PriceService AS priceService',
-          'requestServices.TypeService AS typeService',
+          'requestServices.TypeEquipment AS typeEquipment',
           'requestServices.Note AS note',
           'requestServices.Status AS status',
         ])
