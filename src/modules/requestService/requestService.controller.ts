@@ -41,7 +41,7 @@ export class RequestServiceController {
     return await this.requestServiceService.getAll();
   }
 
-  @Get('allby')
+  @Get('allbyuserid')
   async getAllByUserId(
     @Body() body: GetAllRequestServiceDto,
   ): Promise<RequestServiceResponse[]> {
