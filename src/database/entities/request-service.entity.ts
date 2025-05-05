@@ -19,10 +19,10 @@ export class RequestServiceEntity extends BaseTimestamp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('int', { name: 'userId', nullable: true })
+  @Column({ name: 'userId', nullable: true })
   userId: string;
 
-  @Column('int', { name: 'staffId', nullable: true })
+  @Column({ name: 'staffId', nullable: true })
   staffId: string;
 
   @Column({ name: 'nameService', nullable: true })
