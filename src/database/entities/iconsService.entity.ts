@@ -20,9 +20,9 @@ export class IconServiceEntity extends BaseTimestamp {
   @Column({ nullable: true, name: 'Type' })
   type: string;
 
-  @Column('int')
-  idService: number;
+  @Column('uuid')
+  idService: string;
 
-  @Column('int', { name: 'total_views', default: 0, nullable: true })
+  @Column('integer', { name: 'total_views', default: 0, nullable: true })
   totalViews: number;
 }

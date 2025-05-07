@@ -1,9 +1,15 @@
-import { Exclude } from 'class-transformer';
-import { Entity, PrimaryColumn, Column } from 'typeorm';
-
-@Exclude()
-@Entity('Users')
-export class UsersEntity {
+import { UsersEntity } from 'src/database/entities/users.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryColumn,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+// Chưa cần thiết
+@Entity('Fixer')
+export class FixerEntity {
   @PrimaryColumn('uuid')
   id: string;
 
@@ -15,6 +21,12 @@ export class UsersEntity {
 
   @Column('bigint', { name: 'DeleteAt', nullable: true })
   deleteAt: number;
+
+  @Column('varchar', { name: 'EmployeeCode', unique: true })
+  employeeCode: string;
+
+  @Column('varchar', { name: 'Position' })
+  position: string;
 
   @Column('varchar', { name: 'Username', nullable: true })
   username: string;

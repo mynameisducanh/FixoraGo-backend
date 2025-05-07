@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { StaffEntity } from 'src/database/entities/staff.entity';
+import { FixerEntity } from 'src/database/entities/fixer.entity';
 
 @Injectable()
 export class StaffService {
   constructor(
-    @InjectRepository(StaffEntity)
-    private readonly staffRes: Repository<StaffEntity>,
+    @InjectRepository(FixerEntity)
+    private readonly staffRes: Repository<FixerEntity>,
   ) {}
 
-  async save(staff: Partial<StaffEntity>): Promise<StaffEntity> {
+  async save(staff: Partial<FixerEntity>): Promise<FixerEntity> {
     return this.staffRes.save(staff);
   }
 }

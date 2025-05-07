@@ -9,33 +9,35 @@ export class TokensEntity extends BaseTimestamp {
   @Column({
     nullable: false,
     name: 'RefreshToken',
-    length: 4096,
+    type: 'text'
   })
   refreshToken: string;
 
   @Column({
     nullable: false,
     name: 'refreshPublicKey',
-    length: 4096,
+    type: 'text'
   })
   refreshPublicKey: string;
 
   @Column({
     nullable: false,
     name: 'accessPublicKey',
-    length: 4096,
+    type: 'text'
   })
   accessPublicKey: string;
 
   @Column({
     nullable: false,
     name: 'UserId',
+    type: 'uuid'
   })
   userId: string;
 
   @Column({
     nullable: false,
     name: 'ExpireAt',
+    type: 'timestamp'
   })
   expireAt: Date;
 }

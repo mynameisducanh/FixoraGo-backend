@@ -19,6 +19,7 @@ import { RequestServiceResponse } from 'src/modules/requestService/types/request
 import { GetAllRequestServiceDto } from 'src/modules/requestService/dto/get-all-request-service.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express/multer';
 import { ApiConsumes } from '@nestjs/swagger';
+import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 
 @Controller('requestService')
 export class RequestServiceController {
@@ -41,15 +42,15 @@ export class RequestServiceController {
     return await this.requestServiceService.getAll();
   }
 
-  @Get('allby')
+  @Get('allbyuserid/:id')
   async getAllByUserId(
-    @Body() body: GetAllRequestServiceDto,
+    @Param('id') id: string
   ): Promise<RequestServiceResponse[]> {
-    return await this.requestServiceService.getAllByUserId(body);
+    return await this.requestServiceService.getAllByUserId(id);
   }
 
   @Get(':id')
-  async getOneByUnit(@Param('id') id: string): Promise<RequestServiceResponse> {
+  async getOneByUnit(@Param('id') id: string): Promise<RequestServiceEntity> {
     return this.requestServiceService.getOneById(id);
   }
   // @Put(':id')

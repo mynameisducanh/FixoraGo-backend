@@ -2,16 +2,16 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('UserServiceUsage')
 export class UserServiceUsageEntity {
-  @PrimaryGeneratedColumn({ name: 'Id' })
-  id: number;
+  @PrimaryGeneratedColumn('uuid', { name: 'Id' })
+  id: string;
 
-  @Column('varchar', { name: 'UserId', nullable: true })
+  @Column('uuid', { name: 'UserId', nullable: true })
   userId: string;
 
-  @Column('varchar', { name: 'ServiceId', nullable: true })
+  @Column('uuid', { name: 'ServiceId', nullable: true })
   serviceId: string;
 
-  @Column('int', { name: 'UsageCount', default: 0, nullable: true })
+  @Column('integer', { name: 'UsageCount', default: 0, nullable: true })
   usageCount: number;
 
   @Column('bigint', { name: 'LastUsedAt', nullable: true })

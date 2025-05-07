@@ -9,7 +9,7 @@ export class ListDetailServiceEntity extends BaseTimestamp {
   id: number;
 
   @Column({ name: 'serviceId' })
-  service_id: number;
+  serviceId: string;
 
   @Column({ type: 'varchar', length: 255, name: 'name', nullable: true })
   name: string;

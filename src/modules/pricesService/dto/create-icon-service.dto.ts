@@ -8,7 +8,7 @@ export class CreatePricesServiceDto {
   name: string;
 
   @ApiPropertyOptional()
-  serviceId: number;
+  serviceId: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -73,8 +73,11 @@ export class RequestServiceService {
           'requestServices.NameService AS nameService',
           'requestServices.ListDetailService AS listDetailService',
           'requestServices.PriceService AS priceService',
-          'requestServices.TypeService AS typeService',
+          'requestServices.TypeEquipment AS typeEquipment',
           'requestServices.Note AS note',
+          'requestServices.FileImage AS fileImage',
+          'requestServices.Address AS address',
+          'requestServices.Calender AS calender',
           'requestServices.Status AS status',
         ]);
 
@@ -86,26 +89,20 @@ export class RequestServiceService {
     } catch (error) {}
   }
 
-  async getAllByUserId(
-    body: GetAllRequestServiceDto,
-  ): Promise<RequestServiceResponse[]> {
+  async getAllByUserId(id: string): Promise<RequestServiceResponse[]> {
     try {
       const queryResult =
         this.requestServiceRes.createQueryBuilder('requestServices');
 
-      if (body.isStaff) {
-        queryResult.where('requestServices.StaffId = :userId', {
-          userId: body.userId,
-        });
-      } else {
-        queryResult.where('requestServices.UserId = :userId', {
-          userId: body.userId,
-        });
-      }
+      console.log(id);
+      queryResult.where('requestServices.userId = :userId', {
+        userId: id,
+      });
 
       const data = queryResult
         .orderBy('requestServices.UpdateAt', 'ASC')
         .addOrderBy('requestServices.CreateAt', 'ASC')
+        .where('requestServices.userId = :userId', { userId: id })
         .addSelect([
           'requestServices.id AS id',
           'requestServices.userId AS userId',
@@ -115,8 +112,11 @@ export class RequestServiceService {
           'requestServices.NameService AS nameService',
           'requestServices.ListDetailService AS listDetailService',
           'requestServices.PriceService AS priceService',
-          'requestServices.TypeService AS typeService',
+          'requestServices.TypeEquipment AS typeEquipment',
           'requestServices.Note AS note',
+          'requestServices.FileImage AS fileImage',
+          'requestServices.Address AS address',
+          'requestServices.Calender AS calender',
           'requestServices.Status AS status',
         ]);
 
@@ -128,37 +128,13 @@ export class RequestServiceService {
     } catch (error) {}
   }
 
-  async getOneById(id: string): Promise<RequestServiceResponse> {
-    try {
-      const queryResult = this.requestServiceRes
-        .createQueryBuilder('requestServices')
-        .andWhere('requestServices.id = :id', { id: id })
-        .addOrderBy('requestServices.CreateAt', 'ASC')
-        .addSelect([
-          'requestServices.id AS id',
-          'requestServices.userId AS userId',
-          'requestServices.staffId AS staffId',
-          'requestServices.CreateAt AS createAt',
-          'requestServices.UpdateAt AS updateAt',
-          'requestServices.NameService AS nameService',
-          'requestServices.ListDetailService AS listDetailService',
-          'requestServices.PriceService AS priceService',
-          'requestServices.TypeService AS typeService',
-          'requestServices.Note AS note',
-          'requestServices.Status AS status',
-        ])
-        .getRawMany();
-
-      const items = plainToClass(RequestServiceResponse, queryResult, {
-        excludeExtraneousValues: true,
-      });
-
-      return items;
-    } catch (error) {
-      throw error;
-    }
+  async getOneById(id: string): Promise<RequestServiceEntity> {
+    const service = await this.requestServiceRes.findOne({
+      where: { id },
+    });
+    return service;
   }
-
+  
   async remove(id: number): Promise<void> {
     const result = await this.requestServiceRes.delete(id);
     if (result.affected === 0) {
