@@ -9,7 +9,7 @@ export class TypeServiceEntity extends BaseTimestamp {
   id: string;
 
   @Column({ name: 'ServiceId' })
-  serviceId: number;
+  serviceId: string;
 
   @Column({ name: 'UnitService' })
   unitService: string;

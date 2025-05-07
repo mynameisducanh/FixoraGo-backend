@@ -15,5 +15,5 @@ export class UpdateIconDto {
   
     @IsOptional()
     @IsInt()
-    idService?: number;
+    idService?: string;
   }

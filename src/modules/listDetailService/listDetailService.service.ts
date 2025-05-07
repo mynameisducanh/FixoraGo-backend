@@ -24,7 +24,7 @@ export class ListDetailServiceService {
     const newFileRecord: DeepPartial<ListDetailServiceEntity> = {
       name: body.name,
       type: body.type,
-      service_id: body.service_id,
+      serviceId: body.serviceId,
       unit: body.unit,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
@@ -49,7 +49,7 @@ export class ListDetailServiceService {
           'listDetailService.CreateAt AS createAt',
           'listDetailService.UpdateAt AS updateAt',
           'listDetailService.Name AS name',
-          'listDetailService.ServiceId AS service_id',
+          'listDetailService.ServiceId AS serviceId',
           'listDetailService.Type AS type',
           'listDetailService.Unit AS unit',
         ]);
@@ -78,7 +78,7 @@ export class ListDetailServiceService {
           'listDetailService.CreateAt AS createAt',
           'listDetailService.UpdateAt AS updateAt',
           'listDetailService.Name AS name',
-          'listDetailService.ServiceId AS service_id',
+          'listDetailService.ServiceId AS serviceId',
           'listDetailService.Type AS type',
           'listDetailService.Unit AS unit',
         ]);

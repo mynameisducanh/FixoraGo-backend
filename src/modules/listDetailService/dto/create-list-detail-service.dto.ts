@@ -16,5 +16,5 @@ export class CreateIconDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  service_id: number;
+  serviceId: string;
 }

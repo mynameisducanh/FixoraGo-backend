@@ -9,7 +9,7 @@ export class ServiceReview extends BaseTimestamp {
   @Column({ name: 'id_request_service', type: 'uuid' })
   idRequestService: string;
 
-  @Column({ name: 'rating', type: 'int' })
+  @Column({ name: 'rating', type: 'integer' })
   rating: number;
 
   @Column({ name: 'comment', type: 'text', nullable: true })

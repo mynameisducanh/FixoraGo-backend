@@ -19,31 +19,31 @@ export class RequestServiceEntity extends BaseTimestamp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'userId', nullable: true })
+  @Column('uuid', { name: 'userId', nullable: true })
   userId: string;
 
-  @Column({ name: 'staffId', nullable: true })
+  @Column('uuid', { name: 'staffId', nullable: true })
   staffId: string;
 
-  @Column({ name: 'nameService', nullable: true })
+  @Column('varchar', { name: 'nameService', nullable: true })
   nameService: string;
 
-  @Column({ name: 'listDetailService', nullable: true })
+  @Column('text', { name: 'listDetailService', nullable: true })
   listDetailService: string;
 
-  @Column({ name: 'priceService', nullable: true })
+  @Column('varchar', { name: 'priceService', nullable: true })
   priceService: string;
 
-  @Column({ name: 'fileImage', nullable: true })
+  @Column('varchar', { name: 'fileImage', nullable: true })
   fileImage: string;
 
-  @Column({ name: 'typeEquipment', nullable: true })
+  @Column('varchar', { name: 'typeEquipment', nullable: true })
   typeEquipment: string;
 
-  @Column({ name: 'address', nullable: true })
+  @Column('text', { name: 'address', nullable: true })
   address: string;
 
-  @Column({ name: 'calender', nullable: true })
+  @Column('varchar', { name: 'calender', nullable: true })
   calender: string;
 
   @Column('text', { name: 'note', nullable: true })
