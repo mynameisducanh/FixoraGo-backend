@@ -149,66 +149,64 @@ export class AuthService {
     }
   }
 
-  async registerStaff(request: RegisterStaffDto): Promise<MessageResponse> {
-    try {
-      const { email, username } = request;
+  // async registerStaff(request: RegisterStaffDto): Promise<MessageResponse> {
+  //   try {
+  //     const { email, username } = request;
 
-      // Check if email exists
-      let user = await this.usersService.findByEmail(email);
-      if (user) {
-        throw new BadRequestException(MESSAGE.EMAIL_EXISTED);
-      }
+  //     let user = await this.usersService.findByEmail(email);
+  //     if (user) {
+  //       throw new BadRequestException(MESSAGE.EMAIL_EXISTED);
+  //     }
 
-      // Check if username exists
-      user = await this.usersService.findByUsername(username);
-      if (user) {
-        throw new BadRequestException('Username already exists');
-      }
+  //     user = await this.usersService.findByUsername(username);
+  //     if (user) {
+  //       throw new BadRequestException('Username already exists');
+  //     }
 
-      const password = generateCustomString(12);
-      const hashedPassword = this.passwordService.encryptPassword(password);
-      const userId = generateId().toLocaleLowerCase();
+  //     const password = generateCustomString(12);
+  //     const hashedPassword = this.passwordService.encryptPassword(password);
+  //     const userId = generateId().toLocaleLowerCase();
 
-      const newUser = await this.usersService.save({
-        id: userId,
-        createAt: new Date().getTime(),
-        updateAt: new Date().getTime(),
-        deleteAt: 0,
-        username: username,
-        password: hashedPassword,
-        authData: '',
-        authService: '',
-        email,
-        emailVerified: 1,
-        phoneVerified: 0,
-        infoVerified: 0,
-        phoneNumber: '',
-        firstName: request.firstName,
-        lastName: request.lastName,
-        roles: Role.Staff,
-        lastPasswordUpdate: new Date().getTime(),
-        lastPictureUpdate: 0,
-        address: '',
-        currentLocation: '',
-        status: 0,
-        lastCheckIn: 0,
-        timezone: timeZoneObj,
-      });
+  //     const newUser = await this.usersService.save({
+  //       id: userId,
+  //       createAt: new Date().getTime(),
+  //       updateAt: new Date().getTime(),
+  //       deleteAt: 0,
+  //       username: username,
+  //       password: hashedPassword,
+  //       authData: '',
+  //       authService: '',
+  //       email,
+  //       emailVerified: 1,
+  //       phoneVerified: 0,
+  //       infoVerified: 0,
+  //       phoneNumber: '',
+  //       firstName: request.firstName,
+  //       lastName: request.lastName,
+  //       roles: Role.Staff,
+  //       lastPasswordUpdate: new Date().getTime(),
+  //       lastPictureUpdate: 0,
+  //       address: '',
+  //       currentLocation: '',
+  //       status: 0,
+  //       lastCheckIn: 0,
+  //       timezone: timeZoneObj,
+  //     });
 
-      await this.staffService.save({
-        userId: newUser,
-        employeeCode: request.employeeCode,
-        position: request.position,
-      });
+  //     await this.staffService.save({
+  //       userId: newUser,
+  //       employeeCode: request.employeeCode,
+  //       position: request.position,
+  //     });
 
-      return {
-        statusCode: HttpStatus.OK,
-        message: MESSAGE.ACCOUNT_REGISTER_SUCCESS,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
+  //     return {
+  //       statusCode: HttpStatus.OK,
+  //       message: MESSAGE.ACCOUNT_REGISTER_SUCCESS,
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   // async sendVerifyEmail(
   //   request: SendEmailDto,

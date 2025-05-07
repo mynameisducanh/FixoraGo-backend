@@ -25,8 +25,6 @@ export class ChatRoom {
   staffId: string;
 
   @Column({
-    type: 'enum',
-    enum: RoomStatus,
     default: RoomStatus.ACTIVE,
   })
   status: RoomStatus;

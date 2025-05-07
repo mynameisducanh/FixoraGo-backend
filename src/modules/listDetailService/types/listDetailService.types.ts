@@ -5,7 +5,7 @@ export class ListDetailServiceResponse {
   id: number;
 
   @Expose()
-  service_id: number;
+  serviceId: string;
 
   @Expose()
   name: string;

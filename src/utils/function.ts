@@ -1,5 +1,6 @@
 import * as moment from 'moment-timezone';
 import * as crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 export const generateCustomString = (length: number): string => {
   const chars =
@@ -21,10 +22,7 @@ export const generateTimestamp = () => {
 };
 
 export const generateId = () => {
-  const uuid = generateCustomString(15);
-  const timestamp = generateTimestamp();
-  const uuidWithTimestamp = uuid + timestamp;
-  return uuidWithTimestamp.substring(0, 26);
+  return uuidv4();
 };
 
 export const generateOTP = (length = 6, expiresIn = 5 * 60 * 1000) => {

@@ -18,13 +18,13 @@ export class RequestConfirmEntity extends BaseTimestamp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('varchar', { name: 'userId', nullable: true })
+  @Column('uuid', { name: 'userId', nullable: true })
   userId: string;
 
-  @Column('varchar', { name: 'staffId', nullable: true })
+  @Column('uuid', { name: 'staffId', nullable: true })
   staffId: string;
 
-  @Column('varchar', { name: 'requestServiceId', nullable: true })
+  @Column('uuid', { name: 'requestServiceId', nullable: true })
   requestServiceId: string;
 
   @Column('varchar', { name: 'proposedPrice', nullable: true })
@@ -33,10 +33,10 @@ export class RequestConfirmEntity extends BaseTimestamp {
   @Column('varchar', { name: 'negotiatedPrice', nullable: true })
   negotiatedPrice: string;
 
-  @Column('tinyint', { name: 'StaffVerified', nullable: true })
+  @Column('smallint', { name: 'StaffVerified', nullable: true })
   staffVerified: number;
 
-  @Column('tinyint', { name: 'UserVerified', nullable: true })
+  @Column('smallint', { name: 'UserVerified', nullable: true })
   userVerified: number;
 
   @Column('text', { name: 'userNote', nullable: true })

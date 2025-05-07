@@ -3,34 +3,35 @@ import { BaseTimestamp } from 'src/database/entities/base-timestamp';
 
 @Entity('services')
 export class ServicesEntity extends BaseTimestamp {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column('varchar', { name: 'category_id', nullable: true })
+  @Column('uuid', { name: 'category_id', nullable: true })
   categoryId: string;
 
   @Column({
     nullable: true,
     name: 'Name',
+    type: 'varchar'
   })
   name: string;
 
   @Column('text', { nullable: true })
   description: string;
 
-  @Column('int', { nullable: true })
+  @Column('integer', { nullable: true })
   duration: number;
 
-  @Column('int', { name: 'total_usage', default: 0, nullable: true })
+  @Column('integer', { name: 'total_usage', default: 0, nullable: true })
   totalUsage: number;
 
-  @Column('int', { name: 'total_views', default: 0, nullable: true })
+  @Column('integer', { name: 'total_views', default: 0, nullable: true })
   totalViews: number;
 
   @Column('float', { default: 0, nullable: true })
   rating: number;
 
-  @Column('int', { name: 'total_reviews', default: 0, nullable: true })
+  @Column('integer', { name: 'total_reviews', default: 0, nullable: true })
   totalReviews: number;
 
   @Column('varchar', { name: 'image_url', nullable: true })

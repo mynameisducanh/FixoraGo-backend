@@ -3,15 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
-  database,
   entities,
-  host,
   migrations,
-  password,
-  port,
   synchronize,
-  type,
-  username,
 } from './common/config/ormconfig';
 import { UsersModule } from 'src/modules/users/users.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
@@ -40,13 +34,12 @@ import { ServiceReviewModule } from './modules/serviceReview/service-review.modu
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule, ScheduleModule.forRoot()],
-      useFactory: () => ({
-        type,
-        host,
-        port,
-        username,
-        password,
-        database,
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get('DATABASE_URL'),
+        ssl: {
+          rejectUnauthorized: false
+        },
         entities,
         synchronize,
         migrations,

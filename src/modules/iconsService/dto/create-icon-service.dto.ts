@@ -15,7 +15,7 @@ export class CreateIconDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  idService: number;
+  idService: string;
 
   @ApiProperty()
   file: Express.Multer.File;
