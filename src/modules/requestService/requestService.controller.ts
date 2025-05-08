@@ -10,6 +10,8 @@ import {
   UseInterceptors,
   UploadedFiles,
   Req,
+  Query,
+  Patch,
 } from '@nestjs/common';
 import { CreateRequestServiceDto } from 'src/modules/requestService/dto/create-request-service.dto';
 import { MessageResponse } from 'src/common/types/response';
@@ -17,9 +19,14 @@ import { ListDetailServiceResponse } from 'src/modules/listDetailService/types/l
 import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 import { RequestServiceResponse } from 'src/modules/requestService/types/requestService.types';
 import { GetAllRequestServiceDto } from 'src/modules/requestService/dto/get-all-request-service.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express/multer';
+import {
+  FileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express/multer';
 import { ApiConsumes } from '@nestjs/swagger';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
+import { FilterRequestServiceDto } from './dto/filter-request-service.dto';
+import { FixerApprovalDto } from './dto/fixer-approval.dto';
 
 @Controller('requestService')
 export class RequestServiceController {
@@ -44,14 +51,35 @@ export class RequestServiceController {
 
   @Get('allbyuserid/:id')
   async getAllByUserId(
-    @Param('id') id: string
+    @Param('id') id: string,
   ): Promise<RequestServiceResponse[]> {
     return await this.requestServiceService.getAllByUserId(id);
+  }
+
+  @Get('getallbyfixerid/:id')
+  async getAllByFixerId(
+    @Param('id') id: string,
+  ): Promise<RequestServiceResponse[]> {
+    return await this.requestServiceService.getAllByFixerId(id);
+  }
+
+  @Get('filter')
+  async filterPendingOrRejected(
+    @Query() filter: FilterRequestServiceDto,
+  ): Promise<RequestServiceResponse[]> {
+    return this.requestServiceService.getAllPendingOrRejected(filter);
   }
 
   @Get(':id')
   async getOneByUnit(@Param('id') id: string): Promise<RequestServiceEntity> {
     return this.requestServiceService.getOneById(id);
+  }
+
+  @Patch('fixer-approval')
+  async fixerApproval(
+    @Body() dto: FixerApprovalDto,
+  ): Promise<MessageResponse> {
+    return this.requestServiceService.fixerReceiveRequest(dto.requestId, dto.fixerId);
   }
   // @Put(':id')
   // async update(
