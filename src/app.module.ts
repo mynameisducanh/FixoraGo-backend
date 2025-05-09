@@ -26,6 +26,7 @@ import { RequestConfirmModule } from './modules/requestConfirm/requestConfirm.mo
 import { RequestConfirmServiceModule } from './modules/requestConfirmService/requestConfirmService.module';
 import { ServiceReviewModule } from './modules/serviceReview/service-review.module';
 import { HistoryActiveRequestModule } from './modules/historyActiveRequest/historyActiveRequest.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -62,7 +63,8 @@ import { HistoryActiveRequestModule } from './modules/historyActiveRequest/histo
     RequestConfirmModule,
     RequestConfirmServiceModule,
     ServiceReviewModule,
-    HistoryActiveRequestModule
+    HistoryActiveRequestModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [AppService],

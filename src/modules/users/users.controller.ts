@@ -56,6 +56,7 @@ export class UserController {
   @Get('me')
   async getMyself(@Req() req: any): Promise<UserResponse> {
     const { userLogged } = req;
+    console.log(userLogged)
     const userData = plainToClass(UserResponse, userLogged, {
       excludeExtraneousValues: true,
     });
