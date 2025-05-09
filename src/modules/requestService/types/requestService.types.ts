@@ -4,23 +4,23 @@ export class RequestServiceResponse {
   @Expose()
   id: string;
 
-  @Expose()
+  @Expose({ name: 'userid' })
   userId: string;
 
-  @Expose()
-  staffId: string;
+  @Expose({ name: 'fixerid' })
+  fixerId: string;
 
-  @Expose()
+  @Expose({ name: 'nameservice' })
   nameService: string;
 
-  @Expose()
+  @Expose({ name: 'listdetailservice' })
   listDetailService: string;
 
-  @Expose()
+  @Expose({ name: 'priceservice' })
   priceService: string;
 
-  @Expose()
-  typeService: string;
+  @Expose({ name: 'typeequipment' })
+  typeEquipment: string;
 
   @Expose()
   note: string;
@@ -29,18 +29,26 @@ export class RequestServiceResponse {
   status: string;
 
   @Expose()
-  @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))
-  createAt?: Date;
+  calender: string;
+  
+  @Expose()
+  address: string;
+
+  @Expose({ name: 'fileimage' })
+  fileImage: string;
+
+  @Expose({ name: 'createat' })
+  @Transform(({ value }) => value ? parseInt(value) : null)
+  createAt: number;
+
+  @Expose({ name: 'updateat' })
+  @Transform(({ value }) => value ? parseInt(value) : null)
+  updateAt: number;
+
+  @Expose({ name: 'deleteat' })
+  @Transform(({ value }) => value ? parseInt(value) : null)
+  deleteAt: number;
 
   @Expose()
-  @Transform(({ obj }) =>
-    parseInt(obj.updateAt) === 0 ? null : new Date(parseInt(obj.updateAt, 10)),
-  )
-  updateAt?: Date;
-
-  @Expose()
-  @Transform(({ obj }) =>
-    parseInt(obj.deleteAt) === 0 ? null : new Date(parseInt(obj.deleteAt, 10)),
-  )
-  deleteAt?: Date;
+  temp: string;
 }

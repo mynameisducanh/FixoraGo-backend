@@ -30,7 +30,7 @@ export class ListDetailServiceController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<ListDetailServiceResponse[]> {
+  async findOne(@Param('id') id: string): Promise<ListDetailServiceResponse[]> {
     return this.iconsService.getAllByServiceId(id);
   }
 
@@ -49,7 +49,7 @@ export class ListDetailServiceController {
   // }
 
   @Delete(':id')
-  async remove(@Param('id') id: number): Promise<void> {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.iconsService.remove(id);
   }
 }

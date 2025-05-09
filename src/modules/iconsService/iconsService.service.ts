@@ -27,12 +27,15 @@ export class IconsServiceService {
     file: Express.Multer.File,
     body: CreateIconDto,
   ): Promise<MessageResponse> {
-    const fileUrl = await this.cloudService.uploadLottieFilesToCloud(file);
+    let fileUrl;
+    if (file) {
+      fileUrl = await this.cloudService.uploadLottieFilesToCloud(file);
+    }
     const newFileRecord: DeepPartial<IconServiceEntity> = {
       name: body.name,
       type: body.type,
       idService: body.idService,
-      url: fileUrl,
+      url: file ? fileUrl : '',
       totalViews: 0,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
@@ -46,29 +49,30 @@ export class IconsServiceService {
 
   async getAll(): Promise<IconServiceResponse[]> {
     try {
-      const queryResult =
-        this.iconServiceRes.createQueryBuilder('iconsService');
+      const queryResult = this.iconServiceRes
+        .createQueryBuilder('iconsService')
+        .select([
+          'iconsService.id',
+          'iconsService.name',
+          'iconsService.url',
+          'iconsService.type',
+          'iconsService.idService',
+          'iconsService.totalViews',
+          'iconsService.createAt',
+          'iconsService.updateAt',
+          'iconsService.deleteAt'
+        ])
+        .orderBy('iconsService.updateAt', 'ASC')
+        .addOrderBy('iconsService.createAt', 'ASC');
 
-      const data = queryResult
-        .orderBy('iconsService.UpdateAt', 'ASC')
-        .addOrderBy('iconsService.CreateAt', 'ASC')
-        .addSelect([
-          'iconsService.id AS id',
-          'iconsService.CreateAt AS createAt',
-          'iconsService.UpdateAt AS updateAt',
-          'iconsService.Name AS name',
-          'iconsService.Url AS url',
-          'iconsService.Type AS type',
-          'iconsService.idService AS idService',
-          'iconsService.totalViews AS totalViews',
-        ]);
-
-      const result = await data.getRawMany();
+      const result = await queryResult.getMany();
       const items = plainToClass(IconServiceResponse, result, {
         excludeExtraneousValues: true,
       });
       return items;
-    } catch (error) {}
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findOne(id: number): Promise<IconServiceEntity> {

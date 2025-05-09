@@ -63,24 +63,24 @@ export class ListDetailServiceService {
   }
 
   async getAllByServiceId(
-    ServiceId: number,
+    ServiceId: string,
   ): Promise<ListDetailServiceResponse[]> {
     try {
       const queryResult =
         this.listDetailServiceRes.createQueryBuilder('listDetailService');
-
+      console.log(ServiceId)
       const data = queryResult
-        .where('listDetailService.ServiceId = :ServiceId', { ServiceId })
+        .where('listDetailService.serviceId = :ServiceId', { ServiceId })
         .orderBy('listDetailService.UpdateAt', 'ASC')
         .addOrderBy('listDetailService.CreateAt', 'ASC')
         .addSelect([
           'listDetailService.id AS id',
           'listDetailService.CreateAt AS createAt',
           'listDetailService.UpdateAt AS updateAt',
-          'listDetailService.Name AS name',
-          'listDetailService.ServiceId AS serviceId',
-          'listDetailService.Type AS type',
-          'listDetailService.Unit AS unit',
+          'listDetailService.name AS name',
+          'listDetailService.serviceId AS serviceId',
+          'listDetailService.type AS type',
+          'listDetailService.unit AS unit',
         ]);
 
       const result = await data.getRawMany();
@@ -111,7 +111,7 @@ export class ListDetailServiceService {
   //   return this.findOne(id);
   // }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const result = await this.listDetailServiceRes.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Icon with ID ${id} not found`);
