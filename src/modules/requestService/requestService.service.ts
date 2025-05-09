@@ -76,20 +76,22 @@ export class RequestServiceService {
         .addOrderBy('requestServices.CreateAt', 'ASC')
         .addSelect([
           'requestServices.id AS id',
-          'requestServices.userId AS userId',
-          'requestServices.fixerId AS fixerId',
-          'requestServices.CreateAt AS createAt',
-          'requestServices.UpdateAt AS updateAt',
-          'requestServices.NameService AS nameService',
-          'requestServices.ListDetailService AS listDetailService',
-          'requestServices.PriceService AS priceService',
-          'requestServices.TypeEquipment AS typeEquipment',
-          'requestServices.Note AS note',
-          'requestServices.FileImage AS fileImage',
-          'requestServices.Address AS address',
-          'requestServices.Calender AS calender',
-          'requestServices.Status AS status',
-        ]);
+          'requestServices.userId AS userid',
+          'requestServices.fixerId AS fixerid',
+          'requestServices.CreateAt AS createat',
+          'requestServices.UpdateAt AS updateat',
+          'requestServices.DeleteAt AS deleteat',
+          'requestServices.nameService AS nameservice',
+          'requestServices.listDetailService AS listdetailservice',
+          'requestServices.priceService AS priceservice',
+          'requestServices.typeEquipment AS typeequipment',
+          'requestServices.note AS note',
+          'requestServices.fileImage AS fileimage',
+          'requestServices.address AS address',
+          'requestServices.calender AS calender',
+          'requestServices.status AS status',
+          'requestServices.temp AS temp'
+        ])
 
       const result = await data.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
@@ -101,41 +103,38 @@ export class RequestServiceService {
 
   async getAllByUserId(id: string): Promise<RequestServiceResponse[]> {
     try {
-      const queryResult =
-        this.requestServiceRes.createQueryBuilder('requestServices');
-
-      console.log(id);
-      queryResult.where('requestServices.userId = :userId', {
-        userId: id,
-      });
-
-      const data = queryResult
-        .orderBy('requestServices.UpdateAt', 'ASC')
-        .addOrderBy('requestServices.CreateAt', 'ASC')
+      const queryResult = this.requestServiceRes
+        .createQueryBuilder('requestServices')
         .where('requestServices.userId = :userId', { userId: id })
         .addSelect([
           'requestServices.id AS id',
-          'requestServices.userId AS userId',
-          'requestServices.fixerId AS fixerId',
-          'requestServices.CreateAt AS createAt',
-          'requestServices.UpdateAt AS updateAt',
-          'requestServices.NameService AS nameService',
-          'requestServices.ListDetailService AS listDetailService',
-          'requestServices.PriceService AS priceService',
-          'requestServices.TypeEquipment AS typeEquipment',
-          'requestServices.Note AS note',
-          'requestServices.FileImage AS fileImage',
-          'requestServices.Address AS address',
-          'requestServices.Calender AS calender',
-          'requestServices.Status AS status',
-        ]);
-
-      const result = await data.getRawMany();
+          'requestServices.userId AS userid',
+          'requestServices.fixerId AS fixerid',
+          'requestServices.CreateAt AS createat',
+          'requestServices.UpdateAt AS updateat',
+          'requestServices.DeleteAt AS deleteat',
+          'requestServices.nameService AS nameservice',
+          'requestServices.listDetailService AS listdetailservice',
+          'requestServices.priceService AS priceservice',
+          'requestServices.typeEquipment AS typeequipment',
+          'requestServices.note AS note',
+          'requestServices.fileImage AS fileimage',
+          'requestServices.address AS address',
+          'requestServices.calender AS calender',
+          'requestServices.status AS status',
+          'requestServices.temp AS temp'
+        ])
+        .orderBy('requestServices.UpdateAt', 'ASC')
+        .addOrderBy('requestServices.CreateAt', 'ASC');
+       
+      const result = await queryResult.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
       return items;
-    } catch (error) {}
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAllByFixerId(id: string): Promise<RequestServiceResponse[]> {
@@ -154,20 +153,22 @@ export class RequestServiceService {
         .where('requestServices.userId = :userId', { userId: id })
         .addSelect([
           'requestServices.id AS id',
-          'requestServices.userId AS userId',
-          'requestServices.fixerId AS fixerId',
-          'requestServices.CreateAt AS createAt',
-          'requestServices.UpdateAt AS updateAt',
-          'requestServices.NameService AS nameService',
-          'requestServices.ListDetailService AS listDetailService',
-          'requestServices.PriceService AS priceService',
-          'requestServices.TypeEquipment AS typeEquipment',
-          'requestServices.Note AS note',
-          'requestServices.FileImage AS fileImage',
-          'requestServices.Address AS address',
-          'requestServices.Calender AS calender',
-          'requestServices.Status AS status',
-        ]);
+          'requestServices.userId AS userid',
+          'requestServices.fixerId AS fixerid',
+          'requestServices.CreateAt AS createat',
+          'requestServices.UpdateAt AS updateat',
+          'requestServices.DeleteAt AS deleteat',
+          'requestServices.nameService AS nameservice',
+          'requestServices.listDetailService AS listdetailservice',
+          'requestServices.priceService AS priceservice',
+          'requestServices.typeEquipment AS typeequipment',
+          'requestServices.note AS note',
+          'requestServices.fileImage AS fileimage',
+          'requestServices.address AS address',
+          'requestServices.calender AS calender',
+          'requestServices.status AS status',
+          'requestServices.temp AS temp'
+        ])
 
       const result = await data.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
@@ -206,20 +207,22 @@ export class RequestServiceService {
 
     queryBuilder.addSelect([
       'requestServices.id AS id',
-      'requestServices.userId AS userId',
-      'requestServices.fixerId AS fixerId',
-      'requestServices.CreateAt AS createAt',
-      'requestServices.UpdateAt AS updateAt',
-      'requestServices.NameService AS nameService',
-      'requestServices.ListDetailService AS listDetailService',
-      'requestServices.PriceService AS priceService',
-      'requestServices.TypeEquipment AS typeEquipment',
-      'requestServices.Note AS note',
-      'requestServices.FileImage AS fileImage',
-      'requestServices.Address AS address',
-      'requestServices.Calender AS calender',
-      'requestServices.Status AS status',
-    ]);
+      'requestServices.userId AS userid',
+      'requestServices.fixerId AS fixerid',
+      'requestServices.CreateAt AS createat',
+      'requestServices.UpdateAt AS updateat',
+      'requestServices.DeleteAt AS deleteat',
+      'requestServices.nameService AS nameservice',
+      'requestServices.listDetailService AS listdetailservice',
+      'requestServices.priceService AS priceservice',
+      'requestServices.typeEquipment AS typeequipment',
+      'requestServices.note AS note',
+      'requestServices.fileImage AS fileimage',
+      'requestServices.address AS address',
+      'requestServices.calender AS calender',
+      'requestServices.status AS status',
+      'requestServices.temp AS temp'
+    ])
 
     const result = await queryBuilder.getRawMany();
     const items = plainToClass(RequestServiceResponse, result, {

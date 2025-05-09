@@ -2,7 +2,7 @@ import { Expose, Transform } from 'class-transformer';
 
 export class PriceServiceResponse {
   @Expose()
-  id: number;
+  id: string;
 
   @Expose()
   name: string;

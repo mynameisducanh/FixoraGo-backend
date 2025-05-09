@@ -29,6 +29,7 @@ export class ServicesController {
 
   @Get(':id')
   async getServices(@Param('id') id: string) {
+    console.log(id)
     return await this.servicesService.getOne(id);
   }
 }

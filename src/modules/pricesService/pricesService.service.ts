@@ -93,7 +93,7 @@ export class PriceServiceService {
           'typeService.id AS id',
           'typeService.CreateAt AS createAt',
           'typeService.UpdateAt AS updateAt',
-          'typeService.Name AS name',
+          'typeService.name AS name',
           'typeService.ServiceId AS serviceId',
           'typeService.UnitService AS unitService',
           'typeService.time AS time',
