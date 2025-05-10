@@ -124,8 +124,8 @@ export class RequestServiceService {
           'requestServices.status AS status',
           'requestServices.temp AS temp'
         ])
-        .orderBy('requestServices.UpdateAt', 'ASC')
-        .addOrderBy('requestServices.CreateAt', 'ASC');
+        .orderBy('requestServices.UpdateAt', 'DESC')
+        .addOrderBy('requestServices.CreateAt', 'DESC');
        
       const result = await queryResult.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
@@ -264,6 +264,7 @@ export class RequestServiceService {
     const service = await this.requestServiceRes.findOne({
       where: { id },
     });
+    console.log(service)
     return service;
   }
 

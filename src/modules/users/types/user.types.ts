@@ -6,17 +6,17 @@ export class UserResponse {
   id: string;
 
   @Expose()
-  firstName: string;
+  firstname: string;
 
   @Expose()
   username?: string;
 
   @Expose()
-  lastName: string;
+  lastname: string;
 
   @Expose()
   @Transform(({ obj }) =>
-    obj.firstName && obj.lastName ? obj.firstName + ' ' + obj.lastName : '',
+    obj.firstname && obj.lastname ? obj.firstname + ' ' + obj.lastname : '',
   )
   fullName: string;
 
@@ -31,7 +31,12 @@ export class UserResponse {
 
   @Expose()
   userFolderId: string;
-
+  @Expose()
+  address: string;
+  @Expose()
+  phonenumber: string;
+  @Expose()
+  authdata: string;
   @Expose()
   @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))
   createAt?: Date;

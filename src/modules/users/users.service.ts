@@ -56,6 +56,7 @@ export class UsersService {
         'user.Status as status',
         'user.CreateAt as createAt',
         'user.LastCheckIn as lastCheckIn',
+        'user.AuthData as authData',
       ])
       .getRawOne();
 
