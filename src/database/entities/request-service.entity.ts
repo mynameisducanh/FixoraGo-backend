@@ -12,6 +12,7 @@ export enum ServiceStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   COMPLETED = 'completed',
+  Guarantee = 'guarantee',
 }
 
 @Entity('requestServices')
