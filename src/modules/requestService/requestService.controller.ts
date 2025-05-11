@@ -60,6 +60,7 @@ export class RequestServiceController {
   async getAllByFixerId(
     @Param('id') id: string,
   ): Promise<RequestServiceResponse[]> {
+    console.log(id)
     return await this.requestServiceService.getAllByFixerId(id);
   }
 
