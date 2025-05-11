@@ -17,7 +17,7 @@ export class IconServiceResponse {
   idService: string;
 
   @Expose()
-  totalViews: string;
+  totalViews: number;
 
   @Expose()
     @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))

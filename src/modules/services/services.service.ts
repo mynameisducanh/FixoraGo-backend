@@ -1,10 +1,11 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageResponse } from 'src/common/types/response';
 import { ServicesEntity } from 'src/database/entities/services.entity';
 import { CloudService } from 'src/helpers/cloud.helper';
 import { CreateServiceDto } from 'src/modules/services/dto/create-service.dto';
 import { DeepPartial, Repository } from 'typeorm';
+import { validate as validateUUID } from 'uuid';
 
 @Injectable()
 export class ServicesService {
@@ -22,7 +23,10 @@ export class ServicesService {
     body: CreateServiceDto,
     file: Express.Multer.File,
   ): Promise<MessageResponse> {
-    const urlImage = await this.cloudService.uploadFileToCloud(file);
+    let urlImage = null;
+    if(file){
+      urlImage = await this.cloudService.uploadFileToCloud(file);
+    }
 
     const serviceData = {
       categoryId: body.categoryId,
@@ -33,7 +37,7 @@ export class ServicesService {
       totalViews: 0,
       rating: 5,
       totalReviews: 0,
-      imageUrl: urlImage[0], // Use the first image URL from the array
+      imageUrl: file ? urlImage[0] : '', 
       isActive: true,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
@@ -47,9 +51,18 @@ export class ServicesService {
   }
 
   async getOne(id: string): Promise<ServicesEntity> {
+    if (!id || !validateUUID(id)) {
+      throw new BadRequestException('Invalid service ID format');
+    }
+
     const service = await this.serviceRes.findOne({
       where: { id },
     });
+
+    if (!service) {
+      throw new NotFoundException(`Service with ID ${id} not found`);
+    }
+
     return service;
   }
 }

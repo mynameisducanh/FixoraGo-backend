@@ -25,6 +25,8 @@ import { NewsModule } from 'src/modules/news/news.module';
 import { RequestConfirmModule } from './modules/requestConfirm/requestConfirm.module';
 import { RequestConfirmServiceModule } from './modules/requestConfirmService/requestConfirmService.module';
 import { ServiceReviewModule } from './modules/serviceReview/service-review.module';
+import { HistoryActiveRequestModule } from './modules/historyActiveRequest/historyActiveRequest.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -61,6 +63,8 @@ import { ServiceReviewModule } from './modules/serviceReview/service-review.modu
     RequestConfirmModule,
     RequestConfirmServiceModule,
     ServiceReviewModule,
+    HistoryActiveRequestModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [AppService],

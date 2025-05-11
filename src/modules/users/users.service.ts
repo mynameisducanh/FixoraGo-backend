@@ -39,9 +39,9 @@ export class UsersService {
   async findById(id: string): Promise<UsersEntity> {
     const user = await this.userRes
       .createQueryBuilder('user')
-      .where('user.Id = :id', { id })
+      .where('user.id = :id', { id })
       .select([
-        'user.Id as id',
+        'user.id as id',
         'user.Username as username',
         'user.FirstName as firstName',
         'user.LastName as lastName',
@@ -56,6 +56,7 @@ export class UsersService {
         'user.Status as status',
         'user.CreateAt as createAt',
         'user.LastCheckIn as lastCheckIn',
+        'user.AuthData as authData',
       ])
       .getRawOne();
 
@@ -120,7 +121,7 @@ export class UsersService {
     return await this.userRes
       .createQueryBuilder('user')
       .select([
-        'user.Id as id',
+        'user.id as id',
         'user.Username as username',
         'user.FirstName as firstName',
         'user.LastName as lastName',
