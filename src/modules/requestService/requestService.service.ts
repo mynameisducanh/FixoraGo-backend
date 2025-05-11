@@ -150,7 +150,6 @@ export class RequestServiceService {
       const data = queryResult
         .orderBy('requestServices.UpdateAt', 'ASC')
         .addOrderBy('requestServices.CreateAt', 'ASC')
-        .where('requestServices.userId = :userId', { userId: id })
         .addSelect([
           'requestServices.id AS id',
           'requestServices.userId AS userid',
@@ -174,6 +173,7 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+      console.log(items)
       return items;
     } catch (error) {}
   }

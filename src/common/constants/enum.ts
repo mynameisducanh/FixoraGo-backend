@@ -1,6 +1,6 @@
 export enum Role {
   User = 'system_user',
-  Staff = 'system_staff',
+  Fixer = 'system_fixer',
   Admin = 'system_admin',
 }
 
