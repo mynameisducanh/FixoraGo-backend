@@ -90,8 +90,10 @@ export class RequestServiceService {
           'requestServices.address AS address',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
-          'requestServices.temp AS temp'
-        ])
+          'requestServices.approvedTime AS approvedTime',
+          'requestServices.guaranteeTime AS guaranteeTime',
+          'requestServices.temp AS temp',
+        ]);
 
       const result = await data.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
@@ -122,11 +124,13 @@ export class RequestServiceService {
           'requestServices.address AS address',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
-          'requestServices.temp AS temp'
+          'requestServices.approvedTime AS approvedTime',
+          'requestServices.guaranteeTime AS guaranteeTime',
+          'requestServices.temp AS temp',
         ])
         .orderBy('requestServices.UpdateAt', 'DESC')
         .addOrderBy('requestServices.CreateAt', 'DESC');
-       
+
       const result = await queryResult.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
@@ -166,14 +170,16 @@ export class RequestServiceService {
           'requestServices.address AS address',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
-          'requestServices.temp AS temp'
-        ])
+          'requestServices.approvedTime AS approvedTime',
+          'requestServices.guaranteeTime AS guaranteeTime',
+          'requestServices.temp AS temp',
+        ]);
 
       const result = await data.getRawMany();
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
-      console.log(items)
+      console.log(items);
       return items;
     } catch (error) {}
   }
@@ -185,7 +191,8 @@ export class RequestServiceService {
       this.requestServiceRes.createQueryBuilder('requestServices');
 
     queryBuilder.where('requestServices.status IN (:...statuses)', {
-      statuses: [ServiceStatus.PENDING, ServiceStatus.REJECTED],
+      // statuses: [ServiceStatus.PENDING, ServiceStatus.REJECTED],
+      statuses: [ServiceStatus.PENDING],
     });
 
     // Lọc theo tên dịch vụ nếu có
@@ -221,8 +228,10 @@ export class RequestServiceService {
       'requestServices.address AS address',
       'requestServices.calender AS calender',
       'requestServices.status AS status',
-      'requestServices.temp AS temp'
-    ])
+      'requestServices.approvedTime AS approvedTime',
+      'requestServices.guaranteeTime AS guaranteeTime',
+      'requestServices.temp AS temp',
+    ]);
 
     const result = await queryBuilder.getRawMany();
     const items = plainToClass(RequestServiceResponse, result, {
@@ -250,6 +259,7 @@ export class RequestServiceService {
     // Cập nhật thông tin
     requestService.fixerId = fixerId;
     requestService.status = ServiceStatus.APPROVED;
+    requestService.approvedTime = new Date().getTime().toString();
     requestService.updateAt = new Date().getTime();
 
     await this.requestServiceRes.save(requestService);
@@ -264,7 +274,7 @@ export class RequestServiceService {
     const service = await this.requestServiceRes.findOne({
       where: { id },
     });
-    console.log(service)
+    console.log(service);
     return service;
   }
 
@@ -272,6 +282,64 @@ export class RequestServiceService {
     const result = await this.requestServiceRes.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Icon with ID ${id} not found`);
+    }
+  }
+
+  async getApprovedServiceByFixerId(
+    fixerId: string,
+  ): Promise<{
+    status: string;
+    message?: string;
+    data?: RequestServiceResponse;
+  }> {
+    try {
+      const queryResult = this.requestServiceRes
+        .createQueryBuilder('requestServices')
+        .where('requestServices.fixerId = :fixerId', { fixerId })
+        .andWhere('requestServices.status = :status', {
+          status: ServiceStatus.APPROVED,
+        })
+        .addSelect([
+          'requestServices.id AS id',
+          'requestServices.userId AS userid',
+          'requestServices.fixerId AS fixerid',
+          'requestServices.CreateAt AS createat',
+          'requestServices.UpdateAt AS updateat',
+          'requestServices.DeleteAt AS deleteat',
+          'requestServices.nameService AS nameservice',
+          'requestServices.listDetailService AS listdetailservice',
+          'requestServices.priceService AS priceservice',
+          'requestServices.typeEquipment AS typeequipment',
+          'requestServices.note AS note',
+          'requestServices.fileImage AS fileimage',
+          'requestServices.address AS address',
+          'requestServices.calender AS calender',
+          'requestServices.status AS status',
+          'requestServices.approvedTime AS approvedTime',
+          'requestServices.guaranteeTime AS guaranteeTime',
+          'requestServices.temp AS temp',
+        ])
+        .orderBy('requestServices.UpdateAt', 'DESC');
+
+      const result = await queryResult.getRawOne();
+
+      if (!result) {
+        return {
+          status: 'fail',
+          message: 'No approved service found for this fixer ID.',
+        };
+      }
+
+      const item = plainToClass(RequestServiceResponse, result, {
+        excludeExtraneousValues: true,
+      });
+
+      return {
+        status: 'success',
+        data: item,
+      };
+    } catch (error) {
+      throw error;
     }
   }
 }
