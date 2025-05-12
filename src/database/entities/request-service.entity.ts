@@ -12,7 +12,7 @@ export enum ServiceStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   COMPLETED = 'completed',
-  Guarantee = 'guarantee',
+  GUARANTEE = 'guarantee',
 }
 
 @Entity('requestServices')
@@ -52,6 +52,12 @@ export class RequestServiceEntity extends BaseTimestamp {
 
   @Column('varchar', { length: 50, nullable: true })
   status: ServiceStatus;
+
+  @Column({ nullable: true })
+  approvedTime: string;
+
+  @Column({ nullable: true })
+  guaranteeTime: string;
 
   @Column({ nullable: true })
   temp: string;
