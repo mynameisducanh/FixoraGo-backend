@@ -1,9 +1,9 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { ConfirmStatus } from 'src/database/entities/request-confirm.entity';
 
 export class UpdateRequestConfirmDto {
   @IsOptional()
-  @IsNumber()
+  @IsString()
   negotiatedPrice?: string;
 
   @IsOptional()
@@ -16,5 +16,9 @@ export class UpdateRequestConfirmDto {
 
   @IsOptional()
   @IsEnum(ConfirmStatus)
-  status?: ConfirmStatus;
+  userVerified?: ConfirmStatus;
+
+  @IsOptional()
+  @IsEnum(ConfirmStatus)
+  staffVerified?: ConfirmStatus;
 } 
