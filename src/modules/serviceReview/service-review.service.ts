@@ -33,11 +33,11 @@ export class ServiceReviewService {
     });
   }
 
-  async getAverageRating(idRequestService: string): Promise<number> {
+  async getAverageRatingForFixer(userId: string): Promise<number> {
     const result = await this.serviceReviewRepository
       .createQueryBuilder('review')
       .select('AVG(review.rating)', 'average')
-      .where('review.idRequestService = :idRequestService', { idRequestService })
+      .where('review.userId = :userId', { userId })
       .getRawOne();
 
     return result.average || 0;
