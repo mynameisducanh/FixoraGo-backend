@@ -74,7 +74,7 @@ export class AuthService {
 
       const { accessToken, refreshToken } =
         await this.tokenService.createOne(payload);
-
+      console.log(accessToken)
       return {
         accessToken,
         refreshToken,

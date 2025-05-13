@@ -1,12 +1,12 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { BaseTimestamp } from './base-timestamp';
 
-@Entity('service_reviews')
+@Entity('serviceReviews')
 export class ServiceReview extends BaseTimestamp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'id_request_service', type: 'uuid' })
+  @Column({ name: 'idRequestService', type: 'uuid' })
   idRequestService: string;
 
   @Column({ name: 'rating', type: 'integer' })
@@ -15,6 +15,15 @@ export class ServiceReview extends BaseTimestamp {
   @Column({ name: 'comment', type: 'text', nullable: true })
   comment: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
+  @Column({ name: 'type', type: 'text', nullable: true })
+  type: string;
+
+  @Column({ name: 'userId', type: 'uuid' })
   userId: string;
-} 
+
+  @Column({ nullable: true })
+  fixerId: string;
+
+  @Column({ nullable: true })
+  temp: string;
+}
