@@ -14,11 +14,9 @@ export class CreateRequestConfirmDto {
   requestServiceId: string;
 
   @IsNotEmpty()
-  @IsNumber()
   proposedPrice: string;
 
   @IsOptional()
-  @IsNumber()
   negotiatedPrice?: string;
 
   @IsOptional()

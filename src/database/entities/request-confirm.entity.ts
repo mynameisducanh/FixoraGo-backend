@@ -49,5 +49,5 @@ export class RequestConfirmEntity extends BaseTimestamp {
   status: ConfirmStatus;
 
   @Column({ nullable: true })
-  temp: ConfirmStatus;
+  temp: string;
 }

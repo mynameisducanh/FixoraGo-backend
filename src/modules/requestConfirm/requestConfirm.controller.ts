@@ -38,6 +38,7 @@ export class RequestConfirmController {
     @Param('id') id: string,
     @Body() body: UpdateRequestConfirmDto,
   ): Promise<MessageResponse> {
+    console.log('Controller received body:', body);
     return await this.requestConfirmService.updateRequestConfirm(id, body);
   }
 }
