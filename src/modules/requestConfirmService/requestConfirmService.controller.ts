@@ -14,22 +14,31 @@ import { CreateRequestConfirmServiceDto } from './dto/create-request-confirm-ser
 import { MessageResponse } from 'src/common/types/response';
 import { RequestConfirmServiceService } from './requestConfirmService.service';
 import { RequestConfirmServiceResponse } from './types/requestConfirmService.types';
+import { ApiConsumes } from '@nestjs/swagger';
 
 @Controller('requestConfirmService')
 export class RequestConfirmServiceController {
-  constructor(private readonly requestConfirmServiceService: RequestConfirmServiceService) {}
+  constructor(
+    private readonly requestConfirmServiceService: RequestConfirmServiceService,
+  ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   async create(
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<MessageResponse> {
-    return await this.requestConfirmServiceService.createRequestConfirmService(body, file);
+    return await this.requestConfirmServiceService.createRequestConfirmService(
+      body,
+      file,
+    );
   }
 
   @Get(':id')
-  async getOneById(@Param('id') id: string): Promise<RequestConfirmServiceResponse> {
+  async getOneById(
+    @Param('id') id: string,
+  ): Promise<RequestConfirmServiceResponse> {
     return await this.requestConfirmServiceService.getOneById(id);
   }
 
@@ -37,11 +46,15 @@ export class RequestConfirmServiceController {
   async getByRequestConfirmId(
     @Param('requestConfirmId') requestConfirmId: string,
   ): Promise<RequestConfirmServiceResponse[]> {
-    return await this.requestConfirmServiceService.getByRequestConfirmId(requestConfirmId);
+    return await this.requestConfirmServiceService.getByRequestConfirmId(
+      requestConfirmId,
+    );
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<MessageResponse> {
-    return await this.requestConfirmServiceService.deleteRequestConfirmService(id);
+    return await this.requestConfirmServiceService.deleteRequestConfirmService(
+      id,
+    );
   }
-} 
+}
