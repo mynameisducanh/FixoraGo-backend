@@ -5,7 +5,10 @@ import { CreateRequestConfirmDto } from './dto/create-request-confirm.dto';
 import { UpdateRequestConfirmDto } from './dto/update-request-confirm.dto';
 import { MessageResponse } from 'src/common/types/response';
 import { plainToClass } from 'class-transformer';
-import { RequestConfirmEntity, ConfirmStatus } from 'src/database/entities/request-confirm.entity';
+import {
+  RequestConfirmEntity,
+  ConfirmStatus,
+} from 'src/database/entities/request-confirm.entity';
 import { RequestConfirmResponse } from './types/requestConfirm.types';
 
 @Injectable()
@@ -30,8 +33,8 @@ export class RequestConfirmService {
       requestServiceId: body.requestServiceId,
       proposedPrice: body.proposedPrice,
       negotiatedPrice: body.negotiatedPrice,
-      userNote: body.userNote,
       staffNote: body.staffNote,
+      staffVerified: ConfirmStatus.ACCEPTED,
       status: ConfirmStatus.PENDING,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
@@ -44,33 +47,40 @@ export class RequestConfirmService {
   }
 
   async getOneById(id: string): Promise<RequestConfirmResponse> {
+    console.log(id);
     try {
       const queryResult = await this.requestConfirmRes
         .createQueryBuilder('requestConfirms')
         .andWhere('requestConfirms.id = :id', { id: id })
         .addSelect([
           'requestConfirms.id AS id',
-          'requestConfirms.userId AS userId',
-          'requestConfirms.staffId AS staffId',
-          'requestConfirms.requestServiceId AS requestServiceId',
-          'requestConfirms.proposedPrice AS proposedPrice',
-          'requestConfirms.negotiatedPrice AS negotiatedPrice',
-          'requestConfirms.userNote AS userNote',
-          'requestConfirms.staffNote AS staffNote',
+          'requestConfirms.userId AS userid',
+          'requestConfirms.staffId AS staffid',
+          'requestConfirms.requestServiceId AS requestserviceid',
+          'requestConfirms.proposedPrice AS proposedprice',
+          'requestConfirms.negotiatedPrice AS negotiatedprice',
+          'requestConfirms.StaffVerified AS staffverified',
+          'requestConfirms.UserVerified AS userverified',
+          'requestConfirms.userNote AS usernote',
+          'requestConfirms.staffNote AS staffnote',
           'requestConfirms.status AS status',
-          'requestConfirms.createAt AS createAt',
-          'requestConfirms.updateAt AS updateAt',
-          'requestConfirms.confirmedAt AS confirmedAt',
+          'requestConfirms.temp AS temp',
+          'requestConfirms.CreateAt AS createat',
+          'requestConfirms.UpdateAt AS updateat',
+          'requestConfirms.DeleteAt AS deleteat',
         ])
         .getRawOne();
 
       if (!queryResult) {
         throw new NotFoundException(`Request confirm with ID ${id} not found`);
       }
+      console.log(queryResult);
 
-      return plainToClass(RequestConfirmResponse, queryResult, {
+      const item = plainToClass(RequestConfirmResponse, queryResult, {
         excludeExtraneousValues: true,
       });
+      console.log(item);
+      return item;
     } catch (error) {
       throw error;
     }
@@ -120,6 +130,7 @@ export class RequestConfirmService {
     body: UpdateRequestConfirmDto,
   ): Promise<MessageResponse> {
     try {
+      console.log(body)
       const confirm = await this.requestConfirmRes.findOne({
         where: { id: id },
       });
@@ -127,17 +138,41 @@ export class RequestConfirmService {
       if (!confirm) {
         throw new NotFoundException(`Request confirm with ID ${id} not found`);
       }
+      console.log('Current data:', confirm);
 
       const updateData: DeepPartial<RequestConfirmEntity> = {
-        ...body,
+        ...confirm,
         updateAt: new Date().getTime(),
       };
 
-      if (body.status === ConfirmStatus.ACCEPTED || body.status === ConfirmStatus.REJECTED) {
-        updateData.updateAt = new Date().getTime();
+      // Chỉ cập nhật các trường được gửi lên
+      if (body.negotiatedPrice !== undefined) {
+        updateData.negotiatedPrice = body.negotiatedPrice;
+      }
+      if (body.userNote !== undefined) {
+        updateData.userNote = body.userNote;
+      }
+      if (body.staffNote !== undefined) {
+        updateData.staffNote = body.staffNote;
       }
 
-      await this.requestConfirmRes.update(id, updateData);
+      // Xử lý xác nhận từ user
+      if (body.userVerified !== undefined) {
+        console.log(body.userVerified)
+        updateData.userVerified = body.userVerified;
+        if (body.userVerified === ConfirmStatus.ACCEPTED) {
+          // Nếu cả user và staff đã xác nhận thì cập nhật status
+          if (confirm.staffVerified === ConfirmStatus.ACCEPTED) {
+            updateData.status = ConfirmStatus.ACCEPTED;
+          }
+        } else if (body.userVerified === ConfirmStatus.REJECTED) {
+          updateData.status = ConfirmStatus.REJECTED;
+        }
+      }
+
+
+      console.log('Update data:', updateData);
+      await this.save(updateData);
 
       return {
         message: 'Cập nhật request confirm thành công',

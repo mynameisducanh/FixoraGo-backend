@@ -13,12 +13,10 @@ export class CreateRequestConfirmDto {
   @IsString()
   requestServiceId: string;
 
-  @IsNotEmpty()
-  @IsNumber()
+  // @IsNotEmpty()
   proposedPrice: string;
 
   @IsOptional()
-  @IsNumber()
   negotiatedPrice?: string;
 
   @IsOptional()

@@ -21,13 +21,13 @@ export class ServiceReviewController {
     );
   }
 
-  @Get('service/:idRequestService')
+  @Get('requestService/:idRequestService')
   async getReviewsByService(@Param('idRequestService') idRequestService: string) {
     return await this.serviceReviewService.getReviewsByService(idRequestService);
   }
 
-  @Get('service/:idRequestService/average')
-  async getAverageRating(@Param('idRequestService') idRequestService: string) {
-    return await this.serviceReviewService.getAverageRating(idRequestService);
+  @Get('fixer/:userId/average')
+  async getAverageRating(@Param('userId') userId: string) {
+    return await this.serviceReviewService.getAverageRatingForFixer(userId);
   }
 } 

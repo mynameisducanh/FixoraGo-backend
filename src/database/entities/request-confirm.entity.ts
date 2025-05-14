@@ -33,11 +33,11 @@ export class RequestConfirmEntity extends BaseTimestamp {
   @Column('varchar', { name: 'negotiatedPrice', nullable: true })
   negotiatedPrice: string;
 
-  @Column('smallint', { name: 'StaffVerified', nullable: true })
-  staffVerified: number;
+  @Column({ name: 'StaffVerified', nullable: true })
+  staffVerified: string;
 
-  @Column('smallint', { name: 'UserVerified', nullable: true })
-  userVerified: number;
+  @Column({ name: 'UserVerified', nullable: true })
+  userVerified: string;
 
   @Column('text', { name: 'userNote', nullable: true })
   userNote: string;
@@ -47,4 +47,7 @@ export class RequestConfirmEntity extends BaseTimestamp {
 
   @Column('varchar', { length: 50, default: ConfirmStatus.PENDING })
   status: ConfirmStatus;
+
+  @Column({ nullable: true })
+  temp: string;
 }

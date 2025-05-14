@@ -21,6 +21,9 @@ export class RequestConfirmServiceEntity extends BaseTimestamp {
   @Column('varchar', { name: 'name', nullable: false })
   name: string;
 
+  @Column('varchar', { name: 'userId', nullable: false })
+  userId: string;
+
   @Column('varchar', { name: 'type', nullable: false })
   type: ServiceType;
 

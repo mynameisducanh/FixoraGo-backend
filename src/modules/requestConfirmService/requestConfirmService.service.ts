@@ -31,11 +31,13 @@ export class RequestConfirmServiceService {
     file: Express.Multer.File,
   ): Promise<MessageResponse> {
     let imageUrl = '';
+    console.log(body, file);
     if (file) {
       imageUrl = await this.cloudService.uploadFileToCloud(file);
     }
 
     const newService: DeepPartial<RequestConfirmServiceEntity> = {
+      userId: body.userId,
       requestConfirmId: body.requestConfirmId,
       name: body.name,
       type: body.type,
@@ -129,7 +131,9 @@ export class RequestConfirmServiceService {
       });
 
       if (!service) {
-        throw new NotFoundException(`Request confirm service with ID ${id} not found`);
+        throw new NotFoundException(
+          `Request confirm service with ID ${id} not found`,
+        );
       }
 
       const updateData: DeepPartial<RequestConfirmServiceEntity> = {

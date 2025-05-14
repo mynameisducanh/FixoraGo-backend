@@ -60,7 +60,7 @@ export class RequestServiceController {
   async getAllByFixerId(
     @Param('id') id: string,
   ): Promise<RequestServiceResponse[]> {
-    console.log(id)
+    console.log(id);
     return await this.requestServiceService.getAllByFixerId(id);
   }
 
@@ -77,10 +77,20 @@ export class RequestServiceController {
   }
 
   @Patch('fixer-approval')
-  async fixerApproval(
-    @Body() dto: FixerApprovalDto,
-  ): Promise<MessageResponse> {
-    return this.requestServiceService.fixerReceiveRequest(dto.requestId, dto.fixerId);
+  async fixerApproval(@Body() dto: FixerApprovalDto): Promise<MessageResponse> {
+    console.log(dto);
+    return this.requestServiceService.fixerReceiveRequest(
+      dto.requestId,
+      dto.fixerId,
+    );
+  }
+
+  @Get('approved-service/:fixerId')
+  async getApprovedService(@Param('fixerId') fixerId: string) {
+    console.log(fixerId)
+    return await this.requestServiceService.getApprovedServiceByFixerId(
+      fixerId,
+    );
   }
   // @Put(':id')
   // async update(

@@ -1,4 +1,12 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateServiceReviewDto {
   @IsNotEmpty()
@@ -11,6 +19,17 @@ export class CreateServiceReviewDto {
   rating: number;
 
   @IsString()
-  @IsOptional()
   comment?: string;
-} 
+
+  @IsString()
+  type?: string;
+
+  @IsString()
+  fixerId?: string;
+
+  @IsString()
+  userId?: string;
+
+  @IsString()
+  temp?: string;
+}
