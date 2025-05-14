@@ -288,7 +288,7 @@ export class RequestServiceService {
   async getApprovedServiceByFixerId(
     fixerId: string,
   ): Promise<{
-    status: string;
+    statusForFixer: string;
     message?: string;
     data?: RequestServiceResponse;
   }> {
@@ -325,7 +325,7 @@ export class RequestServiceService {
 
       if (!result) {
         return {
-          status: 'fail',
+          statusForFixer: 'fail',
           message: 'No approved service found for this fixer ID.',
         };
       }
@@ -335,7 +335,7 @@ export class RequestServiceService {
       });
 
       return {
-        status: 'success',
+        statusForFixer: 'success',
         data: item,
       };
     } catch (error) {

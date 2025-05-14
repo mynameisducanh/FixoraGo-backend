@@ -21,4 +21,8 @@ export class CreateRequestConfirmServiceDto {
   @IsOptional()
   @IsString()
   note?: string;
-} 
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
+}
