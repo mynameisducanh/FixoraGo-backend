@@ -1,20 +1,14 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { ServiceType } from 'src/database/entities/request-confirm-service.entity';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class UpdateRequestConfirmServiceDto {
-  @IsOptional()
   @IsString()
+  @IsOptional()
   name?: string;
 
   @IsOptional()
-  @IsEnum(ServiceType)
-  type?: ServiceType;
-
-  @IsOptional()
-  @IsString()
   price?: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   note?: string;
-} 
+}

@@ -46,8 +46,11 @@ export class RequestConfirmEntity extends BaseTimestamp {
   staffNote: string;
 
   @Column('varchar', { length: 50, default: ConfirmStatus.PENDING })
-  status: ConfirmStatus;
+  status: string;
 
+  @Column('varchar', { name: 'type', nullable: false })
+  type: string;
+  
   @Column({ nullable: true })
   temp: string;
 }

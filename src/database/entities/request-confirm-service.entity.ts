@@ -15,8 +15,8 @@ export class RequestConfirmServiceEntity extends BaseTimestamp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('varchar', { name: 'requestConfirmId', nullable: false })
-  requestConfirmId: string;
+  @Column('varchar', { name: 'requestServiceId', nullable: false })
+  requestServiceId: string;
 
   @Column('varchar', { name: 'name', nullable: false })
   name: string;
@@ -25,7 +25,7 @@ export class RequestConfirmServiceEntity extends BaseTimestamp {
   userId: string;
 
   @Column('varchar', { name: 'type', nullable: false })
-  type: ServiceType;
+  type: string;
 
   @Column('varchar', { name: 'price', nullable: false })
   price: string;

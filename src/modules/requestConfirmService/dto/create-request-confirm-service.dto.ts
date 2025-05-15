@@ -4,7 +4,7 @@ import { ServiceType } from 'src/database/entities/request-confirm-service.entit
 export class CreateRequestConfirmServiceDto {
   @IsNotEmpty()
   @IsString()
-  requestConfirmId: string;
+  requestServiceId: string;
 
   @IsNotEmpty()
   @IsString()

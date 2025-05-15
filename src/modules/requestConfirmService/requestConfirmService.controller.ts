@@ -8,9 +8,11 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  Patch,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateRequestConfirmServiceDto } from './dto/create-request-confirm-service.dto';
+import { UpdateRequestConfirmServiceDto } from './dto/update-request-confirm-service.dto';
 import { MessageResponse } from 'src/common/types/response';
 import { RequestConfirmServiceService } from './requestConfirmService.service';
 import { RequestConfirmServiceResponse } from './types/requestConfirmService.types';
@@ -28,7 +30,7 @@ export class RequestConfirmServiceController {
   async create(
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<MessageResponse> {
+  ): Promise<MessageResponse & { id?: string }> {
     return await this.requestConfirmServiceService.createRequestConfirmService(
       body,
       file,
@@ -48,6 +50,21 @@ export class RequestConfirmServiceController {
   ): Promise<RequestConfirmServiceResponse[]> {
     return await this.requestConfirmServiceService.getByRequestConfirmId(
       requestConfirmId,
+    );
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateRequestConfirmServiceDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<MessageResponse> {
+    return await this.requestConfirmServiceService.updateRequestConfirmService(
+      id,
+      body,
+      file,
     );
   }
 
