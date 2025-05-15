@@ -29,7 +29,7 @@ export class RequestConfirmServiceService {
   async createRequestConfirmService(
     body: CreateRequestConfirmServiceDto,
     file: Express.Multer.File,
-  ): Promise<MessageResponse> {
+  ): Promise<MessageResponse & { id?: string }> {
     let imageUrl = '';
     console.log(body, file);
     if (file) {
@@ -38,7 +38,7 @@ export class RequestConfirmServiceService {
 
     const newService: DeepPartial<RequestConfirmServiceEntity> = {
       userId: body.userId,
-      requestConfirmId: body.requestConfirmId,
+      requestServiceId: body.requestServiceId,
       name: body.name,
       type: body.type,
       price: body.price,
@@ -48,10 +48,11 @@ export class RequestConfirmServiceService {
       updateAt: new Date().getTime(),
     };
 
-    await this.requestConfirmServiceRes.save(newService);
+    const savedService = await this.requestConfirmServiceRes.save(newService);
     return {
       message: 'Tạo request confirm service thành công',
       statusCode: HttpStatus.OK,
+      id: savedService.id,
     };
   }
 
@@ -137,7 +138,9 @@ export class RequestConfirmServiceService {
       }
 
       const updateData: DeepPartial<RequestConfirmServiceEntity> = {
-        ...body,
+        name: body.name,
+        price: body.price?.toString(),
+        note: body.note,
         updateAt: new Date().getTime(),
       };
 

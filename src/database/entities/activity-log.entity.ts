@@ -4,7 +4,7 @@ import { BaseTimestamp } from './base-timestamp';
 export enum ActivityType {
   STAFF_CHECKIN = 'staff_checkin',
   STAFF_CANCEL = 'staff_cancel',
-  USER_CANCEL = 'user_cancel'
+  USER_CANCEL = 'user_cancel',
 }
 
 @Entity('activityLogs')
@@ -13,11 +13,9 @@ export class ActivityLogEntity extends BaseTimestamp {
   id: string;
 
   @Column({
-    type: 'enum',
-    enum: ActivityType,
-    name: 'activityType'
+    name: 'activityType',
   })
-  activityType: ActivityType;
+  activityType: string;
 
   @Column({ name: 'fixerId', nullable: true })
   fixerId: string;
@@ -40,9 +38,12 @@ export class ActivityLogEntity extends BaseTimestamp {
   @Column({ type: 'text', name: 'address', nullable: true })
   address: string;
 
-  @Column({ name: 'latitude', type: 'float', nullable: true })
-  latitude: number;
+  @Column({ name: 'latitude', nullable: true })
+  latitude: string;
 
-  @Column({ name: 'longitude', type: 'float', nullable: true })
-  longitude: number;
-} 
+  @Column({ name: 'longitude', nullable: true })
+  longitude: string;
+
+  @Column({ nullable: true })
+  temp: string;
+}
