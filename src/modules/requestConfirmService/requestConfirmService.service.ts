@@ -42,6 +42,7 @@ export class RequestConfirmServiceService {
       name: body.name,
       type: body.type,
       price: body.price,
+      userAccept: null,
       image: imageUrl,
       note: body.note,
       createAt: new Date().getTime(),
@@ -65,6 +66,7 @@ export class RequestConfirmServiceService {
           'requestConfirmServices.id AS id',
           'requestConfirmServices.requestConfirmId AS requestConfirmId',
           'requestConfirmServices.name AS name',
+          'requestConfirmServices.userAccept AS userAccept',
           'requestConfirmServices.type AS type',
           'requestConfirmServices.price AS price',
           'requestConfirmServices.image AS image',
@@ -89,29 +91,46 @@ export class RequestConfirmServiceService {
   }
 
   async getByRequestConfirmId(
-    requestConfirmId: string,
+    requestServiceId: string,
+    type: string,
   ): Promise<RequestConfirmServiceResponse[]> {
     try {
-      const queryResult = await this.requestConfirmServiceRes
+      const queryBuilder = this.requestConfirmServiceRes
         .createQueryBuilder('requestConfirmServices')
         .andWhere(
-          'requestConfirmServices.requestConfirmId = :requestConfirmId',
+          'requestConfirmServices.requestServiceId = :requestServiceId',
           {
-            requestConfirmId: requestConfirmId,
+            requestServiceId: requestServiceId,
           },
         )
         .addSelect([
           'requestConfirmServices.id AS id',
-          'requestConfirmServices.requestConfirmId AS requestConfirmId',
+          'requestConfirmServices.requestServiceId AS requestServiceId',
           'requestConfirmServices.name AS name',
+          'requestConfirmServices.userId AS userId',
+          'requestConfirmServices.userAccept AS useraccept',
           'requestConfirmServices.type AS type',
           'requestConfirmServices.price AS price',
           'requestConfirmServices.image AS image',
           'requestConfirmServices.note AS note',
           'requestConfirmServices.createAt AS createAt',
           'requestConfirmServices.updateAt AS updateAt',
-        ])
-        .getRawMany();
+        ]);
+      if (type === 'total') {
+        queryBuilder
+          .andWhere('requestConfirmServices.type = :type', { type: 'total' })
+          .orderBy('requestConfirmServices.createAt', 'DESC')
+          .limit(1);
+      } else if (type === 'repair') {
+        queryBuilder.andWhere('requestConfirmServices.type IN (:...types)', {
+          types: ['repair', 'replace'],
+        });
+      } else {
+        queryBuilder.andWhere('requestConfirmServices.type = :type', { type });
+      }
+
+      const queryResult = await queryBuilder.getRawMany();
+        console.log(queryResult)
 
       return plainToClass(RequestConfirmServiceResponse, queryResult, {
         excludeExtraneousValues: true,
