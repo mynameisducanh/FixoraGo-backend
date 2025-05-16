@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateRequestConfirmServiceDto } from './dto/create-request-confirm-service.dto';
@@ -31,6 +32,7 @@ export class RequestConfirmServiceController {
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
+    console.log("a",body)
     return await this.requestConfirmServiceService.createRequestConfirmService(
       body,
       file,
@@ -44,12 +46,15 @@ export class RequestConfirmServiceController {
     return await this.requestConfirmServiceService.getOneById(id);
   }
 
-  @Get('confirm/:requestConfirmId')
+  @Get('confirm/:requestServiceId')
   async getByRequestConfirmId(
-    @Param('requestConfirmId') requestConfirmId: string,
+    @Param('requestServiceId') requestServiceId: string,
+    @Query('type') type: string,
   ): Promise<RequestConfirmServiceResponse[]> {
+    console.log(requestServiceId, type);
     return await this.requestConfirmServiceService.getByRequestConfirmId(
-      requestConfirmId,
+      requestServiceId,
+      type,
     );
   }
 
