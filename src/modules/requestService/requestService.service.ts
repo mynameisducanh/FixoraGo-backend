@@ -16,6 +16,8 @@ import {
   TimeSort,
 } from './dto/filter-request-service.dto';
 import { UsersService } from '../users/users.service';
+import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
+import { generateId } from 'src/utils/function';
 
 @Injectable()
 export class RequestServiceService {
@@ -24,6 +26,7 @@ export class RequestServiceService {
     @InjectRepository(RequestServiceEntity)
     private readonly requestServiceRes: Repository<RequestServiceEntity>,
     private readonly userService: UsersService,
+    private readonly historyActiveRequestService: HistoryActiveRequestService,
   ) {}
 
   async save(
@@ -44,7 +47,9 @@ export class RequestServiceService {
     if (files && files.length > 0) {
       fileUrl = await this.cloudService.uploadFilesToCloud(files);
     }
+    const idCreate = generateId();
     const newFileRecord: DeepPartial<RequestServiceEntity> = {
+      id: idCreate,
       userId: body.userId,
       fixerId: null,
       nameService: body.nameService,
@@ -60,6 +65,12 @@ export class RequestServiceService {
       updateAt: new Date().getTime(),
     };
     this.requestServiceRes.save(newFileRecord);
+    const dataHistory = {
+      requestServiceId: idCreate,
+      name: 'Yêu cầu đã được gửi vui lòng chờ phản hồi từ nhân viên',
+      type: 'Yêu cầu dịch vụ đã được tạo',
+    };
+    await this.historyActiveRequestService.create(dataHistory);
     return {
       message: 'Tạo request service thành công',
       statusCode: HttpStatus.OK,
@@ -261,7 +272,12 @@ export class RequestServiceService {
     requestService.status = ServiceStatus.APPROVED;
     requestService.approvedTime = new Date().getTime().toString();
     requestService.updateAt = new Date().getTime();
-
+    const dataHistory = {
+      requestServiceId: id,
+      name: 'Yêu cầu đã được nhận bởi nhân viên',
+      type: 'Nhân viên đã nhận yêu cầu',
+    };
+    await this.historyActiveRequestService.create(dataHistory);
     await this.requestServiceRes.save(requestService);
 
     return {
@@ -285,9 +301,7 @@ export class RequestServiceService {
     }
   }
 
-  async getApprovedServiceByFixerId(
-    fixerId: string,
-  ): Promise<{
+  async getApprovedServiceByFixerId(fixerId: string): Promise<{
     statusForFixer: string;
     message?: string;
     data?: RequestServiceResponse;
