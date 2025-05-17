@@ -4,13 +4,15 @@ import { RequestConfirmServiceEntity } from 'src/database/entities/request-confi
 import { RequestConfirmServiceController } from './requestConfirmService.controller';
 import { RequestConfirmServiceService } from './requestConfirmService.service';
 import { CloudService } from 'src/helpers/cloud.helper';
+import { HistoryActiveRequestModule } from 'src/modules/historyActiveRequest/historyActiveRequest.module';
+import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RequestConfirmServiceEntity])
+    TypeOrmModule.forFeature([RequestConfirmServiceEntity]),
+    HistoryActiveRequestModule,
   ],
-  providers: [RequestConfirmServiceService,CloudService],
-  controllers: [RequestConfirmServiceController],
+  providers: [RequestConfirmServiceService, CloudService, ],
   exports: [RequestConfirmServiceService],
 })
-export class RequestConfirmServiceModule {} 
+export class RequestConfirmServiceModule {}

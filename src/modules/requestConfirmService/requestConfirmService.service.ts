@@ -11,6 +11,7 @@ import {
 } from 'src/database/entities/request-confirm-service.entity';
 import { RequestConfirmServiceResponse } from './types/requestConfirmService.types';
 import { CloudService } from 'src/helpers/cloud.helper';
+import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 
 @Injectable()
 export class RequestConfirmServiceService {
@@ -18,6 +19,7 @@ export class RequestConfirmServiceService {
     @InjectRepository(RequestConfirmServiceEntity)
     private readonly requestConfirmServiceRes: Repository<RequestConfirmServiceEntity>,
     private readonly cloudService: CloudService,
+    private readonly historyActiveRequestService: HistoryActiveRequestService,
   ) {}
 
   async save(
@@ -50,6 +52,12 @@ export class RequestConfirmServiceService {
     };
 
     const savedService = await this.requestConfirmServiceRes.save(newService);
+    const dataHistory = {
+      requestServiceId: body.requestServiceId,
+      name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của bạn',
+      type: 'Đề xuất từ nhân viên',
+    };
+    await this.historyActiveRequestService.create(dataHistory);
     return {
       message: 'Tạo request confirm service thành công',
       statusCode: HttpStatus.OK,
@@ -130,7 +138,7 @@ export class RequestConfirmServiceService {
       }
 
       const queryResult = await queryBuilder.getRawMany();
-        console.log(queryResult)
+      console.log(queryResult);
 
       return plainToClass(RequestConfirmServiceResponse, queryResult, {
         excludeExtraneousValues: true,
