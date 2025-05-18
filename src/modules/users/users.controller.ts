@@ -1,20 +1,33 @@
-import { Controller, Get, Req, Patch, Body, Param, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  Patch,
+  Body,
+  Param,
+  Put,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { plainToClass } from 'class-transformer';
 import { JwtAuth } from 'src/common/decorators/jwt-auth.decorator';
 import { UserResponse } from 'src/modules/users/types/user.types';
 import { UsersService } from 'src/modules/users/users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { MessageResponse } from 'src/common/types/response';
 
 @ApiBearerAuth()
 @ApiTags('Users')
 @Controller('users')
-@JwtAuth()
 export class UserController {
   constructor(private readonly userService: UsersService) {}
 
@@ -33,7 +46,6 @@ export class UserController {
       },
     },
   })
-  
   async countUsers(): Promise<{ total: number }> {
     const total = await this.userService.countUsers();
     return { total };
@@ -48,21 +60,22 @@ export class UserController {
   })
   async getAllUsers(): Promise<UserResponse[]> {
     const users = await this.userService.getAllUsers();
-    return users.map(user => plainToClass(UserResponse, user, {
-      excludeExtraneousValues: true,
-    }));
+    return users.map((user) =>
+      plainToClass(UserResponse, user, {
+        excludeExtraneousValues: true,
+      }),
+    );
   }
 
-  
-
   @Get('me')
+  @JwtAuth()
   async getMyself(@Req() req: any): Promise<UserResponse> {
     const { userLogged } = req;
-    console.log(userLogged)
+    console.log(userLogged);
     const userData = plainToClass(UserResponse, userLogged, {
       excludeExtraneousValues: true,
     });
-    console.log(userData)
+    console.log(userData);
     return userData;
   }
 
@@ -117,5 +130,44 @@ export class UserController {
     });
   }
 
-  
+  @Get(':userId')
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the user with the specified ID',
+    type: UserResponse,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getUserByUserId(
+    @Param('userId') userId: string,
+  ): Promise<UserResponse> {
+    const user = await this.userService.getUserByUserId(userId);
+    return plainToClass(UserResponse, user, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Patch('profile/:userId')
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile has been updated successfully',
+    type: MessageResponse,
+  })
+  async updateProfile(
+    @Param('userId') userId: string,
+    @Body() updateProfileDto: UpdateUserProfileDto,
+    @UploadedFile() avatarFile?: Express.Multer.File,
+  ): Promise<MessageResponse> {
+    return await this.userService.updateProfile(
+      userId,
+      updateProfileDto,
+      avatarFile,
+    );
+  }
 }

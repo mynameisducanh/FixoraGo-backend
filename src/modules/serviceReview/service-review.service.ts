@@ -14,11 +14,10 @@ export class ServiceReviewService {
 
   async createReview(
     createServiceReviewDto: CreateServiceReviewDto,
-    user: JwtPayload,
   ): Promise<ServiceReview> {
     const review = this.serviceReviewRepository.create({
       ...createServiceReviewDto,
-      userId: user.id,
+      userId: createServiceReviewDto.userId,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
     });
@@ -26,20 +25,64 @@ export class ServiceReviewService {
     return await this.serviceReviewRepository.save(review);
   }
 
-  async getReviewsByService(idRequestService: string): Promise<ServiceReview[]> {
+  async getReviewsByService(
+    idRequestService: string,
+  ): Promise<ServiceReview[]> {
     return await this.serviceReviewRepository.find({
       where: { idRequestService },
       order: { createAt: 'DESC' },
     });
   }
 
-  async getAverageRatingForFixer(userId: string): Promise<number> {
+  async getReviewsByUserId(userId: string): Promise<ServiceReview[]> {
+    return await this.serviceReviewRepository.find({
+      where: { userId },
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async getReviewsByFixerId(fixerId: string): Promise<ServiceReview[]> {
+    return await this.serviceReviewRepository.find({
+      where: { fixerId },
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async getAverageRatingForFixer(fixerId: string): Promise<{ average: number; count: number }> {
     const result = await this.serviceReviewRepository
       .createQueryBuilder('review')
-      .select('AVG(review.rating)', 'average')
-      .where('review.userId = :userId', { userId })
+      .select('ROUND(AVG(review.rating)::numeric, 2)', 'average')
+      .addSelect('COUNT(review.id)', 'count')
+      .where('review.fixerId = :fixerId', { fixerId })
       .getRawOne();
 
-    return result.average || 0;
+    return {
+      average: parseFloat(result.average) || 0,
+      count: parseInt(result.count) || 0
+    };
   }
-} 
+
+  async getReviewCountForFixer(fixerId: string): Promise<number> {
+    const result = await this.serviceReviewRepository
+      .createQueryBuilder('review')
+      .select('COUNT(review.id)', 'count')
+      .where('review.fixerId = :fixerId', { fixerId })
+      .getRawOne();
+
+    return parseInt(result.count) || 0;
+  }
+
+  async hasUserReviewed(requestServiceId: string, userId: string): Promise<{ hasReviewed: boolean; review?: ServiceReview }> {
+    const review = await this.serviceReviewRepository.findOne({
+      where: {
+        idRequestService: requestServiceId,
+        userId: userId
+      }
+    });
+
+    return {
+      hasReviewed: !!review,
+      review: review || undefined
+    };
+  }
+}

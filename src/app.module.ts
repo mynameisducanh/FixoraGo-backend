@@ -22,11 +22,11 @@ import { PriceServiceModule } from 'src/modules/pricesService/pricesService.modu
 import { RequestServiceModule } from 'src/modules/requestService/requestService.module';
 import { ChatModule } from 'src/modules/chat/chat.module';
 import { NewsModule } from 'src/modules/news/news.module';
-import { RequestConfirmModule } from './modules/requestConfirm/requestConfirm.module';
 import { RequestConfirmServiceModule } from './modules/requestConfirmService/requestConfirmService.module';
 import { ServiceReviewModule } from './modules/serviceReview/service-review.module';
 import { HistoryActiveRequestModule } from './modules/historyActiveRequest/historyActiveRequest.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { ActivityLogModule } from './modules/activity-log/activity-log.module';
 
 @Module({
   imports: [
@@ -60,11 +60,11 @@ import { NotificationModule } from './modules/notification/notification.module';
     RequestServiceModule,
     ChatModule,
     NewsModule,
-    RequestConfirmModule,
     RequestConfirmServiceModule,
     ServiceReviewModule,
     HistoryActiveRequestModule,
-    NotificationModule
+    NotificationModule,
+    ActivityLogModule
   ],
   controllers: [AppController],
   providers: [AppService],

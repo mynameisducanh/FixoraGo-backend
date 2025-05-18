@@ -8,9 +8,12 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  Patch,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateRequestConfirmServiceDto } from './dto/create-request-confirm-service.dto';
+import { UpdateRequestConfirmServiceDto } from './dto/update-request-confirm-service.dto';
 import { MessageResponse } from 'src/common/types/response';
 import { RequestConfirmServiceService } from './requestConfirmService.service';
 import { RequestConfirmServiceResponse } from './types/requestConfirmService.types';
@@ -28,7 +31,8 @@ export class RequestConfirmServiceController {
   async create(
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<MessageResponse> {
+  ): Promise<MessageResponse & { id?: string }> {
+    console.log("a",body)
     return await this.requestConfirmServiceService.createRequestConfirmService(
       body,
       file,
@@ -42,12 +46,30 @@ export class RequestConfirmServiceController {
     return await this.requestConfirmServiceService.getOneById(id);
   }
 
-  @Get('confirm/:requestConfirmId')
+  @Get('confirm/:requestServiceId')
   async getByRequestConfirmId(
-    @Param('requestConfirmId') requestConfirmId: string,
+    @Param('requestServiceId') requestServiceId: string,
+    @Query('type') type: string,
   ): Promise<RequestConfirmServiceResponse[]> {
+    console.log(requestServiceId, type);
     return await this.requestConfirmServiceService.getByRequestConfirmId(
-      requestConfirmId,
+      requestServiceId,
+      type,
+    );
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateRequestConfirmServiceDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<MessageResponse> {
+    return await this.requestConfirmServiceService.updateRequestConfirmService(
+      id,
+      body,
+      file,
     );
   }
 
@@ -56,5 +78,10 @@ export class RequestConfirmServiceController {
     return await this.requestConfirmServiceService.deleteRequestConfirmService(
       id,
     );
+  }
+
+  @Patch('accept/:id')
+  async userAccept(@Param('id') id: string): Promise<MessageResponse> {
+    return await this.requestConfirmServiceService.userAccept(id);
   }
 }
