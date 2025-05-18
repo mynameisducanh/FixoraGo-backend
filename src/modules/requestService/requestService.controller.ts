@@ -23,7 +23,7 @@ import {
   FileInterceptor,
   FilesInterceptor,
 } from '@nestjs/platform-express/multer';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 import { FilterRequestServiceDto } from './dto/filter-request-service.dto';
 import { FixerApprovalDto } from './dto/fixer-approval.dto';
@@ -92,6 +92,33 @@ export class RequestServiceController {
       fixerId,
     );
   }
+
+  @Patch('user-cancel/:id')
+  async userCancel(@Param('id') id: string): Promise<MessageResponse> {
+    return this.requestServiceService.userCancelRequest(id);
+  }
+
+  @Patch('fixer-reject/:id')
+  async fixerReject(@Param('id') id: string): Promise<MessageResponse> {
+    return this.requestServiceService.fixerRejectRequest(id);
+  }
+
+  @Get('fixer/:fixerId/stats')
+  @ApiOperation({ summary: 'Get request statistics for a fixer' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return total, monthly and weekly request counts for the fixer',
+  })
+  async getFixerRequestStats(
+    @Param('fixerId') fixerId: string,
+  ): Promise<{
+    total: number;
+    thisMonth: number;
+    thisWeek: number;
+  }> {
+    return this.requestServiceService.getFixerRequestStats(fixerId);
+  }
+
   // @Put(':id')
   // async update(
   //   @Param('id') id: number,

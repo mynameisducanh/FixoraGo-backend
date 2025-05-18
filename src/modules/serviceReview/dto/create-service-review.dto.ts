@@ -19,17 +19,22 @@ export class CreateServiceReviewDto {
   rating: number;
 
   @IsString()
+  @IsOptional()
   comment?: string;
 
   @IsString()
+  @IsOptional()
   type?: string;
 
   @IsString()
+  @IsOptional()
   fixerId?: string;
 
   @IsString()
+  @IsOptional()
   userId?: string;
 
   @IsString()
+  @IsOptional()
   temp?: string;
 }

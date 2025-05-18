@@ -35,11 +35,15 @@ export class UserResponse {
   address: string;
   @Expose()
   phonenumber: string;
+
   @Expose()
   authdata: string;
-  
+
   @Expose()
-  avatar: string;
+  gioitinh: string;
+
+  @Expose()
+  avatarurl: string;
 
   @Expose({ name: 'createat' })
   @Transform(({ value }) => (value ? parseInt(value) : null))
