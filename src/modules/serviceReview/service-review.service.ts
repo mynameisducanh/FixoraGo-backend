@@ -26,20 +26,36 @@ export class ServiceReviewService {
     return await this.serviceReviewRepository.save(review);
   }
 
-  async getReviewsByService(idRequestService: string): Promise<ServiceReview[]> {
+  async getReviewsByService(
+    idRequestService: string,
+  ): Promise<ServiceReview[]> {
     return await this.serviceReviewRepository.find({
       where: { idRequestService },
       order: { createAt: 'DESC' },
     });
   }
 
-  async getAverageRatingForFixer(userId: string): Promise<number> {
+  async getReviewsByUserId(userId: string): Promise<ServiceReview[]> {
+    return await this.serviceReviewRepository.find({
+      where: { userId },
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async getReviewsByFixerId(fixerId: string): Promise<ServiceReview[]> {
+    return await this.serviceReviewRepository.find({
+      where: { fixerId },
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async getAverageRatingForFixer(fixerId: string): Promise<number> {
     const result = await this.serviceReviewRepository
       .createQueryBuilder('review')
       .select('AVG(review.rating)', 'average')
-      .where('review.userId = :userId', { userId })
+      .where('review.fixerId = :fixerId', { fixerId })
       .getRawOne();
 
     return result.average || 0;
   }
-} 
+}

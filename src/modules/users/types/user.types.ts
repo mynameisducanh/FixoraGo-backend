@@ -37,20 +37,20 @@ export class UserResponse {
   phonenumber: string;
   @Expose()
   authdata: string;
+  
   @Expose()
-  @Transform(({ obj }) => new Date(parseInt(obj.createAt, 10)))
-  createAt?: Date;
+  avatar: string;
 
-  @Expose()
-  @Transform(({ obj }) =>
-    parseInt(obj.updateAt) === 0 ? null : new Date(parseInt(obj.updateAt, 10)),
-  )
-  updateAt?: Date;
+  @Expose({ name: 'createat' })
+  @Transform(({ value }) => (value ? parseInt(value) : null))
+  createAt: number;
 
-  @Expose()
-  @Transform(({ obj }) =>
-    parseInt(obj.deleteAt) === 0 ? null : new Date(parseInt(obj.deleteAt, 10)),
-  )
-  deleteAt?: Date;
+  @Expose({ name: 'updateat' })
+  @Transform(({ value }) => (value ? parseInt(value) : null))
+  updateAt: number;
+
+  @Expose({ name: 'deleteat' })
+  @Transform(({ value }) => (value ? parseInt(value) : null))
+  deleteAt: number;
 }
 export class Users extends PaginationResponse<UserResponse> {}

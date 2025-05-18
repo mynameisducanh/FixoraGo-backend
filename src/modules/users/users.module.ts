@@ -6,14 +6,12 @@ import { UsersService } from './users.service';
 import { PasswordService } from 'src/helpers/bcrypt.helper';
 import { MailerService } from 'src/helpers/mailer.helper';
 import { ConfigModule } from '@nestjs/config';
+import { CloudService } from 'src/helpers/cloud.helper';
 
 @Global()
 @Module({
-  imports: [
-    ConfigModule,
-    TypeOrmModule.forFeature([UsersEntity]),
-  ],
-  providers: [UsersService, PasswordService, MailerService],
+  imports: [ConfigModule, TypeOrmModule.forFeature([UsersEntity])],
+  providers: [UsersService, PasswordService, MailerService, CloudService],
   controllers: [UserController],
   exports: [UsersService],
 })

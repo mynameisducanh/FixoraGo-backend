@@ -78,4 +78,10 @@ export class UsersEntity {
 
   @Column('jsonb', { name: 'Timezone', nullable: true })
   timezone: Record<string, any>;
+
+  @Column('varchar', { name: 'AvatarUrl', nullable: true })
+  avatarUrl: string;
+
+  @Column('varchar', { name: 'Gioitinh', nullable: true })
+  gioitinh: string;
 }
