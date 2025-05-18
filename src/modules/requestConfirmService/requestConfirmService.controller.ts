@@ -79,4 +79,9 @@ export class RequestConfirmServiceController {
       id,
     );
   }
+
+  @Patch('accept/:id')
+  async userAccept(@Param('id') id: string): Promise<MessageResponse> {
+    return await this.requestConfirmServiceService.userAccept(id);
+  }
 }

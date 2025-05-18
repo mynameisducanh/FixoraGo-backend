@@ -12,12 +12,15 @@ import {
 import { RequestConfirmServiceResponse } from './types/requestConfirmService.types';
 import { CloudService } from 'src/helpers/cloud.helper';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
+import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 
 @Injectable()
 export class RequestConfirmServiceService {
   constructor(
     @InjectRepository(RequestConfirmServiceEntity)
     private readonly requestConfirmServiceRes: Repository<RequestConfirmServiceEntity>,
+    @InjectRepository(RequestServiceEntity)
+    private readonly requestServiceRes: Repository<RequestServiceEntity>,
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
   ) {}
@@ -210,6 +213,46 @@ export class RequestConfirmServiceService {
 
       return {
         message: 'Xóa request confirm service thành công',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async userAccept(id: string): Promise<MessageResponse> {
+    try {
+      const service = await this.requestConfirmServiceRes.findOne({
+        where: { id: id },
+      });
+
+      if (!service) {
+        throw new NotFoundException(
+          `Request confirm service with ID ${id} not found`,
+        );
+      }
+
+      // Update userAccept and updateAt
+      await this.requestConfirmServiceRes.update(id, {
+        userAccept: 'accept',
+        updateAt: new Date().getTime(),
+      });
+
+      // If type is guarantee, update guaranteeTime in request service
+      if (service.type === 'guarantee' && service.temp) {
+        const requestService = await this.requestServiceRes.findOne({
+          where: { id: service.requestServiceId },
+        });
+
+        if (requestService) {
+          requestService.guaranteeTime = service.temp;
+          requestService.updateAt = new Date().getTime();
+          await this.requestServiceRes.save(requestService);
+        }
+      }
+
+      return {
+        message: 'Cập nhật trạng thái chấp nhận thành công',
         statusCode: HttpStatus.OK,
       };
     } catch (error) {

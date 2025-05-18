@@ -5,6 +5,7 @@ import { JwtAuth } from '../../common/decorators/jwt-auth.decorator';
 import { User } from '../../common/decorators/current-user.decorator';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ServiceReview } from 'src/database/entities/service-review.entity';
 
 @ApiTags('Service Reviews')
 @Controller('service-reviews')
@@ -12,16 +13,13 @@ export class ServiceReviewController {
   constructor(private readonly serviceReviewService: ServiceReviewService) {}
 
   @Post()
-  @JwtAuth()
   @ApiOperation({ summary: 'Create a new service review' })
   @ApiResponse({ status: 201, description: 'Review created successfully' })
   async createReview(
     @Body() createServiceReviewDto: CreateServiceReviewDto,
-    @User() user: JwtPayload,
   ) {
     return await this.serviceReviewService.createReview(
       createServiceReviewDto,
-      user,
     );
   }
 
@@ -60,12 +58,36 @@ export class ServiceReviewController {
   }
 
   @Get('fixer/:fixerId/average')
-  @ApiOperation({ summary: 'Get average rating for a fixer' })
+  @ApiOperation({ summary: 'Get average rating and review count for a fixer' })
   @ApiResponse({
     status: 200,
-    description: 'Return average rating for the specified fixer',
+    description: 'Return average rating and review count for the specified fixer',
   })
-  async getAverageRatingForFixer(@Param('fixerId') fixerId: string) {
+  async getAverageRatingForFixer(
+    @Param('fixerId') fixerId: string,
+  ): Promise<{ average: number; count: number }> {
     return await this.serviceReviewService.getAverageRatingForFixer(fixerId);
+  }
+
+  @Get('fixer/:fixerId/count')
+  async getReviewCountForFixer(
+    @Param('fixerId') fixerId: string,
+  ): Promise<{ count: number }> {
+    const count = await this.serviceReviewService.getReviewCountForFixer(fixerId);
+    return { count };
+  }
+
+  @Get('check-review/:requestServiceId')
+  @JwtAuth()
+  @ApiOperation({ summary: 'Check if user has reviewed a request service' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return whether user has reviewed and the review if exists',
+  })
+  async checkUserReview(
+    @Param('requestServiceId') requestServiceId: string,
+    @User() user: JwtPayload,
+  ): Promise<{ hasReviewed: boolean; review?: ServiceReview }> {
+    return await this.serviceReviewService.hasUserReviewed(requestServiceId, user.id);
   }
 }

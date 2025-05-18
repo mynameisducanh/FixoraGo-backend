@@ -13,6 +13,7 @@ export enum ServiceStatus {
   REJECTED = 'rejected',
   COMPLETED = 'completed',
   GUARANTEE = 'guarantee',
+  DELETED = 'deleted',
 }
 
 @Entity('requestServices')
