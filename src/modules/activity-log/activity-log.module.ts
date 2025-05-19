@@ -6,6 +6,7 @@ import { ActivityLogController } from './activity-log.controller';
 import { CloudService } from '../../helpers/cloud.helper';
 import { MulterModule } from '@nestjs/platform-express/multer';
 import multer from 'multer';
+import { HistoryActiveRequestModule } from '../historyActiveRequest/historyActiveRequest.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import multer from 'multer';
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),
+    HistoryActiveRequestModule
   ],
   providers: [ActivityLogService, CloudService],
   controllers: [ActivityLogController],
