@@ -3,15 +3,18 @@ import { ServiceType } from 'src/database/entities/request-confirm-service.entit
 
 export class CreateRequestConfirmServiceDto {
   @IsString()
+  @IsOptional()
   requestServiceId: string;
 
   @IsString()
+  @IsOptional()
   name: string;
 
   @IsEnum(ServiceType)
   type: ServiceType;
 
   @IsString()
+  @IsOptional()
   price: string;
 
   @IsOptional()
@@ -21,4 +24,9 @@ export class CreateRequestConfirmServiceDto {
   @IsOptional()
   @IsString()
   userId?: string;
+
+  
+  @IsOptional()
+  @IsString()
+  temp?: string;
 }

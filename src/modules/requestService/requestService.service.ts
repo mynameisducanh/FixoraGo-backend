@@ -19,6 +19,7 @@ import { UsersService } from '../users/users.service';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 import { generateId } from 'src/utils/function';
 import { MoreThanOrEqual } from 'typeorm';
+import { UpdateRequestServiceDto } from 'src/modules/requestService/dto/update-request-service.dto';
 
 @Injectable()
 export class RequestServiceService {
@@ -111,6 +112,11 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+
+      // Check guarantee status for each service
+      const services = await this.requestServiceRes.find();
+      await this.checkAndUpdateGuaranteeStatusForList(services);
+
       return items;
     } catch (error) {}
   }
@@ -147,6 +153,13 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+
+      // Check guarantee status for each service
+      const services = await this.requestServiceRes.find({
+        where: { userId: id },
+      });
+      await this.checkAndUpdateGuaranteeStatusForList(services);
+
       return items;
     } catch (error) {
       throw error;
@@ -158,7 +171,6 @@ export class RequestServiceService {
       const queryResult =
         this.requestServiceRes.createQueryBuilder('requestServices');
 
-      console.log(id);
       queryResult.where('requestServices.fixerId = :fixerId', {
         fixerId: id,
       });
@@ -191,7 +203,6 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
-      console.log(items);
       return items;
     } catch (error) {}
   }
@@ -291,8 +302,12 @@ export class RequestServiceService {
     const service = await this.requestServiceRes.findOne({
       where: { id },
     });
-    console.log(service);
-    return service;
+    if (!service) {
+      throw new NotFoundException(`Request service with ID ${id} not found`);
+    }
+    
+    // Check guarantee status
+    return await this.checkAndUpdateGuaranteeStatus(service);
   }
 
   async remove(id: number): Promise<void> {
@@ -446,5 +461,141 @@ export class RequestServiceService {
       thisMonth,
       thisWeek
     };
+  }
+
+  async updateRequestService(
+    id: string,
+    body: UpdateRequestServiceDto,
+    files: Express.Multer.File[],
+  ): Promise<MessageResponse> {
+    try {
+      const service = await this.requestServiceRes.findOne({
+        where: { id },
+      });
+
+      if (!service) {
+        throw new NotFoundException(`Request service with ID ${id} not found`);
+      }
+
+      const updateData: DeepPartial<RequestServiceEntity> = {
+        nameService: body.nameService,
+        listDetailService: body.listDetailService ? JSON.stringify(body.listDetailService) : undefined,
+        priceService: body.priceService,
+        typeEquipment: body.typeEquipment,
+        calender: body.calender,
+        address: body.address,
+        note: body.note,
+        updateAt: new Date().getTime(),
+      };
+
+      if (files && files.length > 0) {
+        // Delete old files if they exist
+        if (service.fileImage) {
+          const oldFiles = JSON.parse(service.fileImage);
+          for (const fileUrl of oldFiles) {
+            await this.cloudService.deleteFileByUrl(fileUrl, 'image');
+          }
+        }
+        // Upload new files
+        const fileUrls = await this.cloudService.uploadFilesToCloud(files);
+        updateData.fileImage = JSON.stringify(fileUrls);
+      }
+
+      await this.requestServiceRes.update(id, updateData);
+
+      const dataHistory = {
+        requestServiceId: id,
+        name: 'Yêu cầu dịch vụ đã được cập nhật',
+        type: 'Cập nhật yêu cầu dịch vụ',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+
+      return {
+        message: 'Cập nhật request service thành công',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteRequestService(id: string): Promise<MessageResponse> {
+    try {
+      const service = await this.requestServiceRes.findOne({
+        where: { id },
+      });
+
+      if (!service) {
+        throw new NotFoundException(`Request service with ID ${id} not found`);
+      }
+
+      // Delete associated files if they exist
+      if (service.fileImage) {
+        const files = JSON.parse(service.fileImage);
+        for (const fileUrl of files) {
+          await this.cloudService.deleteFileByUrl(fileUrl, 'image');
+        }
+      }
+
+      // Update status to DELETED and set deleteAt
+      service.status = ServiceStatus.DELETED;
+      service.deleteAt = new Date().getTime();
+      service.updateAt = new Date().getTime();
+      await this.requestServiceRes.save(service);
+
+      const dataHistory = {
+        requestServiceId: id,
+        name: 'Yêu cầu dịch vụ đã bị xóa',
+        type: 'Xóa yêu cầu dịch vụ',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+
+      return {
+        message: 'Xóa request service thành công',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateRequestServiceStatus(
+    id: string,
+    status: ServiceStatus,
+    guaranteeTime?: string,
+  ): Promise<void> {
+    const updateData: DeepPartial<RequestServiceEntity> = {
+      status,
+      updateAt: new Date().getTime(),
+    };
+
+    if (guaranteeTime) {
+      updateData.guaranteeTime = guaranteeTime;
+    }
+
+    await this.requestServiceRes.update(id, updateData);
+  }
+
+  private async checkAndUpdateGuaranteeStatus(
+    service: RequestServiceEntity,
+  ): Promise<RequestServiceEntity> {
+    if (
+      service.status === ServiceStatus.GUARANTEE &&
+      service.guaranteeTime &&
+      parseInt(service.guaranteeTime) < new Date().getTime()
+    ) {
+      await this.updateRequestServiceStatus(service.id, ServiceStatus.DONE);
+      service.status = ServiceStatus.DONE;
+    }
+    return service;
+  }
+
+  private async checkAndUpdateGuaranteeStatusForList(
+    services: RequestServiceEntity[],
+  ): Promise<RequestServiceEntity[]> {
+    const updatedServices = await Promise.all(
+      services.map((service) => this.checkAndUpdateGuaranteeStatus(service)),
+    );
+    return updatedServices;
   }
 }

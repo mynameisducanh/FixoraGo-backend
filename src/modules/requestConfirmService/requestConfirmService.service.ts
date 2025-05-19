@@ -13,6 +13,7 @@ import { RequestConfirmServiceResponse } from './types/requestConfirmService.typ
 import { CloudService } from 'src/helpers/cloud.helper';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
+import { ServiceStatus } from 'src/database/entities/request-service.entity';
 
 @Injectable()
 export class RequestConfirmServiceService {
@@ -36,7 +37,6 @@ export class RequestConfirmServiceService {
     file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
     let imageUrl = '';
-    console.log(body, file);
     if (file) {
       imageUrl = await this.cloudService.uploadFileToCloud(file);
     }
@@ -50,17 +50,30 @@ export class RequestConfirmServiceService {
       userAccept: null,
       image: imageUrl,
       note: body.note,
+      temp: body.temp,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
     };
 
     const savedService = await this.requestConfirmServiceRes.save(newService);
-    const dataHistory = {
-      requestServiceId: body.requestServiceId,
-      name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của bạn',
-      type: 'Đề xuất từ nhân viên',
-    };
-    await this.historyActiveRequestService.create(dataHistory);
+    let dataHistory;
+    if (body.type === ServiceType.REPAIR) {
+      dataHistory = {
+        requestServiceId: body.requestServiceId,
+        name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của khách hàng',
+        type: 'Đề xuất từ nhân viên',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+    }
+    if (body.type === ServiceType.COMPLETED) {
+      dataHistory = {
+        requestServiceId: body.requestServiceId,
+        name: 'Nhân viên đã đánh dấu là đã hoàn thành, đang chờ khách hàng xác nhận',
+        type: 'Thông báo hoàn thành từ nhân viên',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+    }
+
     return {
       message: 'Tạo request confirm service thành công',
       statusCode: HttpStatus.OK,
@@ -82,6 +95,7 @@ export class RequestConfirmServiceService {
           'requestConfirmServices.price AS price',
           'requestConfirmServices.image AS image',
           'requestConfirmServices.note AS note',
+          'requestConfirmServices.temp AS temp',
           'requestConfirmServices.createAt AS createAt',
           'requestConfirmServices.updateAt AS updateAt',
         ])
@@ -124,12 +138,13 @@ export class RequestConfirmServiceService {
           'requestConfirmServices.price AS price',
           'requestConfirmServices.image AS image',
           'requestConfirmServices.note AS note',
+          'requestConfirmServices.temp AS temp',
           'requestConfirmServices.createAt AS createAt',
           'requestConfirmServices.updateAt AS updateAt',
         ]);
       if (type === 'total') {
         queryBuilder
-          .andWhere('requestConfirmServices.type = :type', { type: 'total' })
+          .andWhere('requestConfirmServices.type = :type', { type })
           .orderBy('requestConfirmServices.createAt', 'DESC')
           .limit(1);
       } else if (type === 'repair') {
@@ -141,7 +156,6 @@ export class RequestConfirmServiceService {
       }
 
       const queryResult = await queryBuilder.getRawMany();
-      console.log(queryResult);
 
       return plainToClass(RequestConfirmServiceResponse, queryResult, {
         excludeExtraneousValues: true,
@@ -231,25 +245,52 @@ export class RequestConfirmServiceService {
           `Request confirm service with ID ${id} not found`,
         );
       }
+      let dataHistory;
+      if (service.type === 'repair') {
+        dataHistory = {
+          requestServiceId: service.requestServiceId,
+          name: 'Bạn đã xác nhận là đồng ý với đề xuất của nhân viên',
+          type: 'Bạn đã đồng ý với đề xuất',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+      }
+      if (service.type === 'total') {
+        dataHistory = {
+          requestServiceId: service.requestServiceId,
+          name: 'Khách hàng đã xác nhận là đồng ý với đề xuất của nhân viên',
+          type: 'Khách hàng đã đồng ý với đề xuất',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+      }
+      if (service.type === 'completed') {
+        dataHistory = {
+          requestServiceId: service.requestServiceId,
+          name: 'Khách hàng đã xác nhận là nhân viên đã hoàn thành',
+          type: 'Khách hàng đã xác nhận',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
 
-      // Update userAccept and updateAt
-      await this.requestConfirmServiceRes.update(id, {
-        userAccept: 'accept',
-        updateAt: new Date().getTime(),
-      });
-
-      // If type is guarantee, update guaranteeTime in request service
-      if (service.type === 'guarantee' && service.temp) {
-        const requestService = await this.requestServiceRes.findOne({
-          where: { id: service.requestServiceId },
-        });
-
-        if (requestService) {
-          requestService.guaranteeTime = service.temp;
-          requestService.updateAt = new Date().getTime();
-          await this.requestServiceRes.save(requestService);
+        if (service.temp) {
+          const warrantyDays = parseInt(service.temp);
+          const currentTime = new Date().getTime();
+          const guaranteeTime = new Date(currentTime + warrantyDays * 24 * 60 * 60 * 1000).getTime().toString();
+          
+          const requestService = await this.requestServiceRes.findOne({
+            where: { id: service.requestServiceId },
+          });
+          if (requestService) {
+            requestService.status = ServiceStatus.GUARANTEE;
+            requestService.guaranteeTime = guaranteeTime;
+            requestService.updateAt = new Date().getTime();
+            await this.requestServiceRes.save(requestService);
+          }
         }
       }
+
+      await this.requestConfirmServiceRes.update(id, {
+        userAccept: 'Accepted',
+        updateAt: new Date().getTime(),
+      });
 
       return {
         message: 'Cập nhật trạng thái chấp nhận thành công',
@@ -258,5 +299,27 @@ export class RequestConfirmServiceService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async checkFixerCompleted(
+    id: string,
+  ): Promise<{ hasCompleted: boolean; fixerId?: string }> {
+    const activityLog = await this.requestConfirmServiceRes.findOne({
+      where: {
+        requestServiceId: id,
+        type: ServiceType.COMPLETED,
+      },
+      order: { createAt: 'DESC' },
+    });
+    if (activityLog && activityLog.userId) {
+      return {
+        hasCompleted: true,
+        fixerId: activityLog.userId,
+      };
+    }
+
+    return {
+      hasCompleted: false,
+    };
   }
 }

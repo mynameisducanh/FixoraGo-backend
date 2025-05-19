@@ -32,7 +32,6 @@ export class RequestConfirmServiceController {
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
-    console.log("a",body)
     return await this.requestConfirmServiceService.createRequestConfirmService(
       body,
       file,
@@ -51,7 +50,6 @@ export class RequestConfirmServiceController {
     @Param('requestServiceId') requestServiceId: string,
     @Query('type') type: string,
   ): Promise<RequestConfirmServiceResponse[]> {
-    console.log(requestServiceId, type);
     return await this.requestConfirmServiceService.getByRequestConfirmId(
       requestServiceId,
       type,
@@ -71,6 +69,11 @@ export class RequestConfirmServiceController {
       body,
       file,
     );
+  }
+
+  @Get('check-fixer-completed/:id')
+  checkFixerCheckin(@Param('id') id: string) {
+    return this.requestConfirmServiceService.checkFixerCompleted(id);
   }
 
   @Delete(':id')

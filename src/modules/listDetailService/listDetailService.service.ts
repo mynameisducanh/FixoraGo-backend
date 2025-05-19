@@ -68,7 +68,6 @@ export class ListDetailServiceService {
     try {
       const queryResult =
         this.listDetailServiceRes.createQueryBuilder('listDetailService');
-      console.log(ServiceId)
       const data = queryResult
         .where('listDetailService.serviceId = :ServiceId', { ServiceId })
         .orderBy('listDetailService.UpdateAt', 'ASC')
