@@ -67,6 +67,7 @@ export class RequestServiceController {
   async filterPendingOrRejected(
     @Query() filter: FilterRequestServiceDto,
   ): Promise<RequestServiceResponse[]> {
+    console.log(filter)
     return this.requestServiceService.getAllPendingOrRejected(filter);
   }
 

@@ -48,4 +48,16 @@ export class RegisterStaffDto {
   @MinLength(3)
   @MaxLength(50)
   position: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  address: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  insurance: string;
 }
