@@ -7,10 +7,19 @@ import { OtpService } from 'src/modules/otp/otp.service';
 import { OtpModule } from 'src/modules/otp/otp.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { FixerModule } from '../fixer/fixer.module';
+import { StaffModule } from '../staffs/staffs.module';
+import { UsersModule } from '../users/users.module';
 
 @Global()
 @Module({
-  imports: [forwardRef(() => OtpModule)],
+  imports: [
+    forwardRef(() => OtpModule),
+    FixerModule,
+    StaffModule,
+    UsersModule,
+    ConfigModule
+  ],
   providers: [AuthService, MailerService, PasswordService],
   controllers: [AuthController],
   exports: [AuthService],

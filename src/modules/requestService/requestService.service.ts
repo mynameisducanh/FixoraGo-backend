@@ -14,6 +14,7 @@ import { CloudService } from 'src/helpers/cloud.helper';
 import {
   FilterRequestServiceDto,
   TimeSort,
+  TimeFilter,
 } from './dto/filter-request-service.dto';
 import { UsersService } from '../users/users.service';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
@@ -113,9 +114,10 @@ export class RequestServiceService {
         excludeExtraneousValues: true,
       });
 
-      // Check guarantee status for each service
+      // Check guarantee status and expired requests
       const services = await this.requestServiceRes.find();
       await this.checkAndUpdateGuaranteeStatusForList(services);
+      await this.checkAndUpdateExpiredRequests(services);
 
       return items;
     } catch (error) {}
@@ -154,11 +156,12 @@ export class RequestServiceService {
         excludeExtraneousValues: true,
       });
 
-      // Check guarantee status for each service
+      // Check guarantee status and expired requests
       const services = await this.requestServiceRes.find({
         where: { userId: id },
       });
       await this.checkAndUpdateGuaranteeStatusForList(services);
+      await this.checkAndUpdateExpiredRequests(services);
 
       return items;
     } catch (error) {
@@ -203,6 +206,14 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+
+      // Check guarantee status and expired requests
+      const services = await this.requestServiceRes.find({
+        where: { fixerId: id },
+      });
+      await this.checkAndUpdateGuaranteeStatusForList(services);
+      await this.checkAndUpdateExpiredRequests(services);
+
       return items;
     } catch (error) {}
   }
@@ -210,31 +221,81 @@ export class RequestServiceService {
   async getAllPendingOrRejected(
     filter: FilterRequestServiceDto,
   ): Promise<RequestServiceResponse[]> {
-    const queryBuilder =
-      this.requestServiceRes.createQueryBuilder('requestServices');
+    const queryBuilder = this.requestServiceRes.createQueryBuilder('requestServices');
 
-    queryBuilder.where('requestServices.status IN (:...statuses)', {
-      // statuses: [ServiceStatus.PENDING, ServiceStatus.REJECTED],
-      statuses: [ServiceStatus.PENDING],
+    // Base condition: only PENDING status
+    queryBuilder.where('requestServices.status = :status', {
+      status: ServiceStatus.PENDING,
     });
 
-    // Lọc theo tên dịch vụ nếu có
+    // Filter by name service if provided
     if (filter.nameService) {
       queryBuilder.andWhere('requestServices.nameService ILIKE :nameService', {
         nameService: `%${filter.nameService}%`,
       });
     }
 
-    // Sắp xếp theo thời gian
+    // Filter by districts if provided
+    if (filter.districts) {
+      const districtList = filter.districts.split(',');
+      queryBuilder.andWhere('requestServices.address ILIKE ANY(:districts)', {
+        districts: districtList.map(district => `%${district}%`),
+      });
+    }
+
+    // Filter by time
+    if (filter.time && filter.time !== TimeFilter.ALL) {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime();
+      const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+      const endOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 59).getTime();
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+      switch (filter.time) {
+        case TimeFilter.TODAY:
+          queryBuilder.andWhere('requestServices.calender BETWEEN :startOfDay AND :endOfDay', {
+            startOfDay,
+            endOfDay,
+          });
+          break;
+        case TimeFilter.TOMORROW:
+          queryBuilder.andWhere('requestServices.calender BETWEEN :startOfTomorrow AND :endOfTomorrow', {
+            startOfTomorrow,
+            endOfTomorrow,
+          });
+          break;
+        case TimeFilter.THIS_WEEK:
+          queryBuilder.andWhere('requestServices.calender >= :startOfWeek', {
+            startOfWeek,
+          });
+          break;
+        case TimeFilter.THIS_MONTH:
+          queryBuilder.andWhere('requestServices.calender >= :startOfMonth', {
+            startOfMonth,
+          });
+          break;
+      }
+    }
+
+    // Sort by time
     if (filter.sortTime === TimeSort.NEWEST) {
       queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
-    } else if (filter.sortTime === TimeSort.OLDEST) {
+    } else if (filter.sortTime === TimeSort.NEAREST) {
       queryBuilder.orderBy('requestServices.CreateAt', 'ASC');
+    } else if (filter.sortTime === TimeSort.EXPIRINGSOON) {
+      const now = new Date().getTime();
+      // Sắp xếp theo thời gian hẹn gần nhất với thời gian hiện tại
+      queryBuilder
+        .orderBy(`ABS(requestServices.calender - ${now})`, 'ASC')
+        .addOrderBy('requestServices.CreateAt', 'DESC');
     } else {
       // Default order
       queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
     }
 
+    // Select all fields
     queryBuilder.addSelect([
       'requestServices.id AS id',
       'requestServices.userId AS userid',
@@ -260,6 +321,14 @@ export class RequestServiceService {
     const items = plainToClass(RequestServiceResponse, result, {
       excludeExtraneousValues: true,
     });
+
+    // Check guarantee status and expired requests
+    const services = await this.requestServiceRes.find({
+      where: { status: ServiceStatus.PENDING },
+    });
+    await this.checkAndUpdateGuaranteeStatusForList(services);
+    await this.checkAndUpdateExpiredRequests(services);
+
     return items;
   }
 
@@ -305,7 +374,7 @@ export class RequestServiceService {
     if (!service) {
       throw new NotFoundException(`Request service with ID ${id} not found`);
     }
-    
+
     // Check guarantee status
     return await this.checkAndUpdateGuaranteeStatus(service);
   }
@@ -432,34 +501,40 @@ export class RequestServiceService {
     thisWeek: number;
   }> {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+    ).getTime();
+    const startOfWeek = new Date(
+      now.setDate(now.getDate() - now.getDay()),
+    ).getTime();
 
     const [total, thisMonth, thisWeek] = await Promise.all([
       // Total requests
       this.requestServiceRes.count({
-        where: { fixerId }
+        where: { fixerId },
       }),
       // This month's requests
       this.requestServiceRes.count({
         where: {
           fixerId,
-          createAt: MoreThanOrEqual(startOfMonth)
-        }
+          createAt: MoreThanOrEqual(startOfMonth),
+        },
       }),
       // This week's requests
       this.requestServiceRes.count({
         where: {
           fixerId,
-          createAt: MoreThanOrEqual(startOfWeek)
-        }
-      })
+          createAt: MoreThanOrEqual(startOfWeek),
+        },
+      }),
     ]);
 
     return {
       total,
       thisMonth,
-      thisWeek
+      thisWeek,
     };
   }
 
@@ -479,7 +554,9 @@ export class RequestServiceService {
 
       const updateData: DeepPartial<RequestServiceEntity> = {
         nameService: body.nameService,
-        listDetailService: body.listDetailService ? JSON.stringify(body.listDetailService) : undefined,
+        listDetailService: body.listDetailService
+          ? JSON.stringify(body.listDetailService)
+          : undefined,
         priceService: body.priceService,
         typeEquipment: body.typeEquipment,
         calender: body.calender,
@@ -595,6 +672,36 @@ export class RequestServiceService {
   ): Promise<RequestServiceEntity[]> {
     const updatedServices = await Promise.all(
       services.map((service) => this.checkAndUpdateGuaranteeStatus(service)),
+    );
+    return updatedServices;
+  }
+
+  private async checkAndUpdateExpiredRequests(
+    services: RequestServiceEntity[],
+  ): Promise<RequestServiceEntity[]> {
+    const now = new Date().getTime();
+    const updatedServices = await Promise.all(
+      services.map(async (service) => {
+        if (
+          service.status === ServiceStatus.PENDING &&
+          service.calender &&
+          parseInt(service.calender) < now
+        ) {
+          // Cập nhật trạng thái sang REJECTED
+          service.status = ServiceStatus.REJECTED;
+          service.updateAt = now;
+          await this.requestServiceRes.save(service);
+
+          // Tạo lịch sử cho việc từ chối tự động
+          const dataHistory = {
+            requestServiceId: service.id,
+            name: 'Yêu cầu đã bị từ chối do quá hạn',
+            type: 'Tự động từ chối yêu cầu',
+          };
+          await this.historyActiveRequestService.create(dataHistory);
+        }
+        return service;
+      }),
     );
     return updatedServices;
   }
