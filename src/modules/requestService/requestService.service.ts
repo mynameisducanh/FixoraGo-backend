@@ -61,6 +61,8 @@ export class RequestServiceService {
       typeEquipment: body.typeEquipment,
       calender: body.calender,
       address: body.address,
+      isUrgent: body.isUrgent,
+      bonus: body.bonus,
       fileImage: JSON.stringify(fileUrl),
       note: body.note,
       status: ServiceStatus.PENDING,
@@ -101,6 +103,8 @@ export class RequestServiceService {
           'requestServices.typeEquipment AS typeequipment',
           'requestServices.note AS note',
           'requestServices.fileImage AS fileimage',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.address AS address',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
@@ -140,6 +144,8 @@ export class RequestServiceService {
           'requestServices.priceService AS priceservice',
           'requestServices.typeEquipment AS typeequipment',
           'requestServices.note AS note',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.fileImage AS fileimage',
           'requestServices.address AS address',
           'requestServices.calender AS calender',
@@ -187,6 +193,8 @@ export class RequestServiceService {
           'requestServices.fixerId AS fixerid',
           'requestServices.CreateAt AS createat',
           'requestServices.UpdateAt AS updateat',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.DeleteAt AS deleteat',
           'requestServices.nameService AS nameservice',
           'requestServices.listDetailService AS listdetailservice',
@@ -221,7 +229,8 @@ export class RequestServiceService {
   async getAllPendingOrRejected(
     filter: FilterRequestServiceDto,
   ): Promise<RequestServiceResponse[]> {
-    const queryBuilder = this.requestServiceRes.createQueryBuilder('requestServices');
+    const queryBuilder =
+      this.requestServiceRes.createQueryBuilder('requestServices');
 
     // Base condition: only PENDING status
     queryBuilder.where('requestServices.status = :status', {
@@ -239,32 +248,66 @@ export class RequestServiceService {
     if (filter.districts) {
       const districtList = filter.districts.split(',');
       queryBuilder.andWhere('requestServices.address ILIKE ANY(:districts)', {
-        districts: districtList.map(district => `%${district}%`),
+        districts: districtList.map((district) => `%${district}%`),
       });
     }
 
     // Filter by time
     if (filter.time && filter.time !== TimeFilter.ALL) {
       const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime();
-      const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
-      const endOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 59).getTime();
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      const startOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      ).getTime();
+      const endOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+      ).getTime();
+      const startOfTomorrow = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      ).getTime();
+      const endOfTomorrow = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        23,
+        59,
+        59,
+      ).getTime();
+      const startOfWeek = new Date(
+        now.setDate(now.getDate() - now.getDay()),
+      ).getTime();
+      const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).getTime();
 
       switch (filter.time) {
         case TimeFilter.TODAY:
-          queryBuilder.andWhere('requestServices.calender BETWEEN :startOfDay AND :endOfDay', {
-            startOfDay,
-            endOfDay,
-          });
+          queryBuilder.andWhere(
+            'requestServices.calender BETWEEN :startOfDay AND :endOfDay',
+            {
+              startOfDay,
+              endOfDay,
+            },
+          );
           break;
         case TimeFilter.TOMORROW:
-          queryBuilder.andWhere('requestServices.calender BETWEEN :startOfTomorrow AND :endOfTomorrow', {
-            startOfTomorrow,
-            endOfTomorrow,
-          });
+          queryBuilder.andWhere(
+            'requestServices.calender BETWEEN :startOfTomorrow AND :endOfTomorrow',
+            {
+              startOfTomorrow,
+              endOfTomorrow,
+            },
+          );
           break;
         case TimeFilter.THIS_WEEK:
           queryBuilder.andWhere('requestServices.calender >= :startOfWeek', {
@@ -311,6 +354,8 @@ export class RequestServiceService {
       'requestServices.fileImage AS fileimage',
       'requestServices.address AS address',
       'requestServices.calender AS calender',
+      'requestServices.isUrgent AS isUrgent',
+      'requestServices.bonus AS bonus',
       'requestServices.status AS status',
       'requestServices.approvedTime AS approvedTime',
       'requestServices.guaranteeTime AS guaranteeTime',
@@ -374,7 +419,6 @@ export class RequestServiceService {
     if (!service) {
       throw new NotFoundException(`Request service with ID ${id} not found`);
     }
-
     // Check guarantee status
     return await this.checkAndUpdateGuaranteeStatus(service);
   }
@@ -412,6 +456,8 @@ export class RequestServiceService {
           'requestServices.note AS note',
           'requestServices.fileImage AS fileimage',
           'requestServices.address AS address',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
           'requestServices.approvedTime AS approvedTime',
@@ -679,30 +725,53 @@ export class RequestServiceService {
   private async checkAndUpdateExpiredRequests(
     services: RequestServiceEntity[],
   ): Promise<RequestServiceEntity[]> {
-    const now = new Date().getTime();
+    const now = new Date();
     const updatedServices = await Promise.all(
       services.map(async (service) => {
         if (
           service.status === ServiceStatus.PENDING &&
-          service.calender &&
-          parseInt(service.calender) < now
+          service.calender
         ) {
-          // Cập nhật trạng thái sang REJECTED
-          service.status = ServiceStatus.REJECTED;
-          service.updateAt = now;
-          await this.requestServiceRes.save(service);
+          // Parse calendar string format "14:08,Thứ Sáu, 13/06/2025"
+          const [time, dayOfWeek, date] = service.calender.split(',');
+          const [hours, minutes] = time.split(':');
+          const [day, month, year] = date.split('/');
+          
+          const calendarDate = new Date(
+            parseInt(year),
+            parseInt(month) - 1, // Month is 0-based in JavaScript
+            parseInt(day),
+            parseInt(hours),
+            parseInt(minutes)
+          );
 
-          // Tạo lịch sử cho việc từ chối tự động
-          const dataHistory = {
-            requestServiceId: service.id,
-            name: 'Yêu cầu đã bị từ chối do quá hạn',
-            type: 'Tự động từ chối yêu cầu',
-          };
-          await this.historyActiveRequestService.create(dataHistory);
+          // Chỉ đánh dấu là quá hạn nếu ngày hẹn đã qua và không phải cùng ngày
+          if (calendarDate < now && !this.isSameDay(calendarDate, now)) {
+            // Cập nhật trạng thái sang REJECTED
+            service.status = ServiceStatus.REJECTED;
+            service.updateAt = now.getTime();
+            await this.requestServiceRes.save(service);
+
+            // Tạo lịch sử cho việc từ chối tự động
+            const dataHistory = {
+              requestServiceId: service.id,
+              name: 'Yêu cầu đã bị từ chối do quá hạn',
+              type: 'Tự động từ chối yêu cầu',
+            };
+            await this.historyActiveRequestService.create(dataHistory);
+          }
         }
         return service;
       }),
     );
     return updatedServices;
+  }
+
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
   }
 }

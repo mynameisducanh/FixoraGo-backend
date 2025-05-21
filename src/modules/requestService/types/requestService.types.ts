@@ -22,6 +22,12 @@ export class RequestServiceResponse {
   @Expose({ name: 'typeequipment' })
   typeEquipment: string;
 
+  @Expose({ name: 'isUrgent' })
+  isUrgent: string;
+
+  @Expose({ name: 'bonus' })
+  bonus: string;
+
   @Expose()
   note: string;
 
@@ -30,7 +36,7 @@ export class RequestServiceResponse {
 
   @Expose()
   calender: string;
-  
+
   @Expose()
   address: string;
 
@@ -38,15 +44,15 @@ export class RequestServiceResponse {
   fileImage: string;
 
   @Expose({ name: 'createat' })
-  @Transform(({ value }) => value ? parseInt(value) : null)
+  @Transform(({ value }) => (value ? parseInt(value) : null))
   createAt: number;
 
   @Expose({ name: 'updateat' })
-  @Transform(({ value }) => value ? parseInt(value) : null)
+  @Transform(({ value }) => (value ? parseInt(value) : null))
   updateAt: number;
 
   @Expose({ name: 'deleteat' })
-  @Transform(({ value }) => value ? parseInt(value) : null)
+  @Transform(({ value }) => (value ? parseInt(value) : null))
   deleteAt: number;
 
   @Expose()
