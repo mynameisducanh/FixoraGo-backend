@@ -6,7 +6,10 @@ export class CreateFixerDto {
   @IsNotEmpty()
   @IsString()
   employeeCode: string;
-
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  userId: string;
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

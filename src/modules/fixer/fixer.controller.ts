@@ -23,24 +23,27 @@ export class FixerController {
     return this.fixerService.findAll(query);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a fixer by id' })
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get a fixer by userId' })
   @ApiResponse({ status: 200, description: 'Return the fixer.' })
-  findOne(@Param('id') id: string) {
-    return this.fixerService.findOne(id);
+  findByUserId(@Param('userId') userId: string) {
+    return this.fixerService.findByUserId(userId);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a fixer' })
+  @Patch('user/:userId')
+  @ApiOperation({ summary: 'Update a fixer by userId' })
   @ApiResponse({ status: 200, description: 'The fixer has been successfully updated.' })
-  update(@Param('id') id: string, @Body() updateFixerDto: UpdateFixerDto) {
-    return this.fixerService.update(id, updateFixerDto);
+  updateByUserId(
+    @Param('userId') userId: string,
+    @Body() updateFixerDto: UpdateFixerDto,
+  ) {
+    return this.fixerService.updateByUserId(userId, updateFixerDto);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a fixer' })
+  @Delete('user/:userId')
+  @ApiOperation({ summary: 'Delete a fixer by userId' })
   @ApiResponse({ status: 200, description: 'The fixer has been successfully deleted.' })
-  remove(@Param('id') id: string) {
-    return this.fixerService.remove(id);
+  removeByUserId(@Param('userId') userId: string) {
+    return this.fixerService.removeByUserId(userId);
   }
 } 

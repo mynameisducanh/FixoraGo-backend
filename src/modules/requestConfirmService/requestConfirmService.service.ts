@@ -273,8 +273,12 @@ export class RequestConfirmServiceService {
         if (service.temp) {
           const warrantyDays = parseInt(service.temp);
           const currentTime = new Date().getTime();
-          const guaranteeTime = new Date(currentTime + warrantyDays * 24 * 60 * 60 * 1000).getTime().toString();
-          
+          const guaranteeTime = new Date(
+            currentTime + warrantyDays * 24 * 60 * 60 * 1000,
+          )
+            .getTime()
+            .toString();
+
           const requestService = await this.requestServiceRes.findOne({
             where: { id: service.requestServiceId },
           });
@@ -320,6 +324,172 @@ export class RequestConfirmServiceService {
 
     return {
       hasCompleted: false,
+    };
+  }
+
+  // Revenue statistics methods
+  async getUserRevenueStatistics(userId: string) {
+    const currentDate = new Date();
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    ).getTime();
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0,
+    ).getTime();
+
+    // Get total revenue from all time
+    const totalRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .andWhere('requestConfirmServices.userId = :userId', { userId })
+      .getRawOne();
+
+    // Get current month revenue
+    const currentMonthRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .andWhere('requestConfirmServices.userId = :userId', { userId })
+      .andWhere(
+        'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+        {
+          startOfMonth,
+          endOfMonth,
+        },
+      )
+      .getRawOne();
+
+    // Calculate 5% fee for current month
+    const currentMonthFee = currentMonthRevenue?.total
+      ? Math.floor(parseFloat(currentMonthRevenue.total) * 0.05)
+      : 0;
+
+    return {
+      totalRevenue: totalRevenue?.total ? parseFloat(totalRevenue.total) : 0,
+      currentMonthRevenue: currentMonthRevenue?.total
+        ? parseFloat(currentMonthRevenue.total)
+        : 0,
+      currentMonthFee,
+    };
+  }
+
+  async getUserMonthlyRevenue(userId: string) {
+    const currentYear = new Date().getFullYear();
+    const monthlyRevenue = [];
+
+    for (let month = 0; month < 12; month++) {
+      const startOfMonth = new Date(currentYear, month, 1).getTime();
+      const endOfMonth = new Date(currentYear, month + 1, 0).getTime();
+
+      const revenue = await this.requestConfirmServiceRes
+        .createQueryBuilder('requestConfirmServices')
+        .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+        .where('requestConfirmServices.type = :type', {
+          type: ServiceType.TOTAL,
+        })
+        .andWhere('requestConfirmServices.userId = :userId', { userId })
+        .andWhere(
+          'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+          {
+            startOfMonth,
+            endOfMonth,
+          },
+        )
+        .getRawOne();
+
+      monthlyRevenue.push({
+        month: month + 1,
+        revenue: revenue?.total ? parseFloat(revenue.total) : 0,
+      });
+    }
+
+    return monthlyRevenue;
+  }
+
+  async getTotalRevenue() {
+    const currentDate = new Date();
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    ).getTime();
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0,
+    ).getTime();
+
+    // Get total revenue from all time
+    const totalRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .getRawOne();
+
+    // Get current month revenue
+    const currentMonthRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .andWhere(
+        'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+        {
+          startOfMonth,
+          endOfMonth,
+        },
+      )
+      .getRawOne();
+
+    return {
+      totalRevenue: totalRevenue?.total ? parseFloat(totalRevenue.total) : 0,
+      currentMonthRevenue: currentMonthRevenue?.total
+        ? parseFloat(currentMonthRevenue.total)
+        : 0,
+    };
+  }
+
+  async getYearlyRevenue() {
+    const currentYear = new Date().getFullYear();
+    const monthlyRevenue = [];
+
+    for (let month = 0; month < 12; month++) {
+      const startOfMonth = new Date(currentYear, month, 1).getTime();
+      const endOfMonth = new Date(currentYear, month + 1, 0).getTime();
+
+      const revenue = await this.requestConfirmServiceRes
+        .createQueryBuilder('requestConfirmServices')
+        .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+        .where('requestConfirmServices.type = :type', {
+          type: ServiceType.TOTAL,
+        })
+        .andWhere(
+          'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+          {
+            startOfMonth,
+            endOfMonth,
+          },
+        )
+        .getRawOne();
+
+      monthlyRevenue.push({
+        month: month + 1,
+        revenue: revenue?.total ? parseFloat(revenue.total) : 0,
+      });
+    }
+
+    const totalYearlyRevenue = monthlyRevenue.reduce(
+      (sum, month) => sum + month.revenue,
+      0,
+    );
+
+    return {
+      totalYearlyRevenue,
+      monthlyRevenue,
     };
   }
 }

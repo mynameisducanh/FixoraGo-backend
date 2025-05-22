@@ -27,6 +27,8 @@ import { ServiceReviewModule } from './modules/serviceReview/service-review.modu
 import { HistoryActiveRequestModule } from './modules/historyActiveRequest/historyActiveRequest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ActivityLogModule } from './modules/activity-log/activity-log.module';
+import { SkillFixerModule } from './modules/skill-fixer/skill-fixer.module';
+import { FixerModule } from './modules/fixer/fixer.module';
 
 @Module({
   imports: [
@@ -64,7 +66,9 @@ import { ActivityLogModule } from './modules/activity-log/activity-log.module';
     ServiceReviewModule,
     HistoryActiveRequestModule,
     NotificationModule,
-    ActivityLogModule
+    ActivityLogModule,
+    SkillFixerModule,
+    FixerModule
   ],
   controllers: [AppController],
   providers: [AppService],

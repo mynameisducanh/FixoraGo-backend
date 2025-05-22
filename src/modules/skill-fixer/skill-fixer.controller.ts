@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { SkillFixerService } from './skill-fixer.service';
-import { CreateSkillFixerDto } from './dto/create-skill-fixer.dto';
+import { CreateSkillFixerDto, CreateMultipleSkillsDto } from './dto/create-skill-fixer.dto';
 import { UpdateSkillFixerDto } from './dto/update-skill-fixer.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
@@ -16,11 +16,25 @@ export class SkillFixerController {
     return this.skillFixerService.create(createSkillFixerDto);
   }
 
+  @Post('multiple')
+  @ApiOperation({ summary: 'Create multiple skills for a fixer' })
+  @ApiResponse({ status: 201, description: 'The skills have been successfully created.' })
+  createMultiple(@Body() createMultipleSkillsDto: CreateMultipleSkillsDto) {
+    return this.skillFixerService.createMultipleSkills(createMultipleSkillsDto);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all skill fixers' })
   @ApiResponse({ status: 200, description: 'Return all skill fixers.' })
   findAll(@Query() query: any) {
     return this.skillFixerService.findAll(query);
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all skills for a specific user' })
+  @ApiResponse({ status: 200, description: 'Return all skills for the specified user.' })
+  findAllByUserId(@Param('userId') userId: string) {
+    return this.skillFixerService.findAllByUserId(userId);
   }
 
   @Get(':id')
