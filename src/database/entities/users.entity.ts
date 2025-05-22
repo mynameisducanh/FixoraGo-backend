@@ -84,4 +84,10 @@ export class UsersEntity {
 
   @Column('varchar', { name: 'Gioitinh', nullable: true })
   gioitinh: string;
+
+  @Column('varchar', { name: 'Latitude', nullable: true })
+  latitude: string;
+
+  @Column('varchar', { name: 'Longitude', nullable: true })
+  longitude: string;
 }

@@ -14,11 +14,13 @@ import { CloudService } from 'src/helpers/cloud.helper';
 import {
   FilterRequestServiceDto,
   TimeSort,
+  TimeFilter,
 } from './dto/filter-request-service.dto';
 import { UsersService } from '../users/users.service';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 import { generateId } from 'src/utils/function';
 import { MoreThanOrEqual } from 'typeorm';
+import { UpdateRequestServiceDto } from 'src/modules/requestService/dto/update-request-service.dto';
 
 @Injectable()
 export class RequestServiceService {
@@ -59,6 +61,8 @@ export class RequestServiceService {
       typeEquipment: body.typeEquipment,
       calender: body.calender,
       address: body.address,
+      isUrgent: body.isUrgent,
+      bonus: body.bonus,
       fileImage: JSON.stringify(fileUrl),
       note: body.note,
       status: ServiceStatus.PENDING,
@@ -99,6 +103,8 @@ export class RequestServiceService {
           'requestServices.typeEquipment AS typeequipment',
           'requestServices.note AS note',
           'requestServices.fileImage AS fileimage',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.address AS address',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
@@ -111,6 +117,12 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+
+      // Check guarantee status and expired requests
+      const services = await this.requestServiceRes.find();
+      await this.checkAndUpdateGuaranteeStatusForList(services);
+      await this.checkAndUpdateExpiredRequests(services);
+
       return items;
     } catch (error) {}
   }
@@ -132,6 +144,8 @@ export class RequestServiceService {
           'requestServices.priceService AS priceservice',
           'requestServices.typeEquipment AS typeequipment',
           'requestServices.note AS note',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.fileImage AS fileimage',
           'requestServices.address AS address',
           'requestServices.calender AS calender',
@@ -147,6 +161,14 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
+
+      // Check guarantee status and expired requests
+      const services = await this.requestServiceRes.find({
+        where: { userId: id },
+      });
+      await this.checkAndUpdateGuaranteeStatusForList(services);
+      await this.checkAndUpdateExpiredRequests(services);
+
       return items;
     } catch (error) {
       throw error;
@@ -158,7 +180,6 @@ export class RequestServiceService {
       const queryResult =
         this.requestServiceRes.createQueryBuilder('requestServices');
 
-      console.log(id);
       queryResult.where('requestServices.fixerId = :fixerId', {
         fixerId: id,
       });
@@ -172,6 +193,8 @@ export class RequestServiceService {
           'requestServices.fixerId AS fixerid',
           'requestServices.CreateAt AS createat',
           'requestServices.UpdateAt AS updateat',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.DeleteAt AS deleteat',
           'requestServices.nameService AS nameservice',
           'requestServices.listDetailService AS listdetailservice',
@@ -191,7 +214,14 @@ export class RequestServiceService {
       const items = plainToClass(RequestServiceResponse, result, {
         excludeExtraneousValues: true,
       });
-      console.log(items);
+
+      // Check guarantee status and expired requests
+      const services = await this.requestServiceRes.find({
+        where: { fixerId: id },
+      });
+      await this.checkAndUpdateGuaranteeStatusForList(services);
+      await this.checkAndUpdateExpiredRequests(services);
+
       return items;
     } catch (error) {}
   }
@@ -202,28 +232,113 @@ export class RequestServiceService {
     const queryBuilder =
       this.requestServiceRes.createQueryBuilder('requestServices');
 
-    queryBuilder.where('requestServices.status IN (:...statuses)', {
-      // statuses: [ServiceStatus.PENDING, ServiceStatus.REJECTED],
-      statuses: [ServiceStatus.PENDING],
+    // Base condition: only PENDING status
+    queryBuilder.where('requestServices.status = :status', {
+      status: ServiceStatus.PENDING,
     });
 
-    // Lọc theo tên dịch vụ nếu có
+    // Filter by name service if provided
     if (filter.nameService) {
       queryBuilder.andWhere('requestServices.nameService ILIKE :nameService', {
         nameService: `%${filter.nameService}%`,
       });
     }
 
-    // Sắp xếp theo thời gian
+    // Filter by districts if provided
+    if (filter.districts) {
+      const districtList = filter.districts.split(',');
+      queryBuilder.andWhere('requestServices.address ILIKE ANY(:districts)', {
+        districts: districtList.map((district) => `%${district}%`),
+      });
+    }
+
+    // Filter by time
+    if (filter.time && filter.time !== TimeFilter.ALL) {
+      const now = new Date();
+      const startOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      ).getTime();
+      const endOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+      ).getTime();
+      const startOfTomorrow = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      ).getTime();
+      const endOfTomorrow = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        23,
+        59,
+        59,
+      ).getTime();
+      const startOfWeek = new Date(
+        now.setDate(now.getDate() - now.getDay()),
+      ).getTime();
+      const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).getTime();
+
+      switch (filter.time) {
+        case TimeFilter.TODAY:
+          queryBuilder.andWhere(
+            'requestServices.calender BETWEEN :startOfDay AND :endOfDay',
+            {
+              startOfDay,
+              endOfDay,
+            },
+          );
+          break;
+        case TimeFilter.TOMORROW:
+          queryBuilder.andWhere(
+            'requestServices.calender BETWEEN :startOfTomorrow AND :endOfTomorrow',
+            {
+              startOfTomorrow,
+              endOfTomorrow,
+            },
+          );
+          break;
+        case TimeFilter.THIS_WEEK:
+          queryBuilder.andWhere('requestServices.calender >= :startOfWeek', {
+            startOfWeek,
+          });
+          break;
+        case TimeFilter.THIS_MONTH:
+          queryBuilder.andWhere('requestServices.calender >= :startOfMonth', {
+            startOfMonth,
+          });
+          break;
+      }
+    }
+
+    // Sort by time
     if (filter.sortTime === TimeSort.NEWEST) {
       queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
-    } else if (filter.sortTime === TimeSort.OLDEST) {
+    } else if (filter.sortTime === TimeSort.NEAREST) {
       queryBuilder.orderBy('requestServices.CreateAt', 'ASC');
+    } else if (filter.sortTime === TimeSort.EXPIRINGSOON) {
+      const now = new Date().getTime();
+      // Sắp xếp theo thời gian hẹn gần nhất với thời gian hiện tại
+      queryBuilder
+        .orderBy(`ABS(requestServices.calender - ${now})`, 'ASC')
+        .addOrderBy('requestServices.CreateAt', 'DESC');
     } else {
       // Default order
       queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
     }
 
+    // Select all fields
     queryBuilder.addSelect([
       'requestServices.id AS id',
       'requestServices.userId AS userid',
@@ -239,6 +354,8 @@ export class RequestServiceService {
       'requestServices.fileImage AS fileimage',
       'requestServices.address AS address',
       'requestServices.calender AS calender',
+      'requestServices.isUrgent AS isUrgent',
+      'requestServices.bonus AS bonus',
       'requestServices.status AS status',
       'requestServices.approvedTime AS approvedTime',
       'requestServices.guaranteeTime AS guaranteeTime',
@@ -249,6 +366,14 @@ export class RequestServiceService {
     const items = plainToClass(RequestServiceResponse, result, {
       excludeExtraneousValues: true,
     });
+
+    // Check guarantee status and expired requests
+    const services = await this.requestServiceRes.find({
+      where: { status: ServiceStatus.PENDING },
+    });
+    await this.checkAndUpdateGuaranteeStatusForList(services);
+    await this.checkAndUpdateExpiredRequests(services);
+
     return items;
   }
 
@@ -291,8 +416,11 @@ export class RequestServiceService {
     const service = await this.requestServiceRes.findOne({
       where: { id },
     });
-    console.log(service);
-    return service;
+    if (!service) {
+      throw new NotFoundException(`Request service with ID ${id} not found`);
+    }
+    // Check guarantee status
+    return await this.checkAndUpdateGuaranteeStatus(service);
   }
 
   async remove(id: number): Promise<void> {
@@ -328,6 +456,8 @@ export class RequestServiceService {
           'requestServices.note AS note',
           'requestServices.fileImage AS fileimage',
           'requestServices.address AS address',
+          'requestServices.isUrgent AS isUrgent',
+          'requestServices.bonus AS bonus',
           'requestServices.calender AS calender',
           'requestServices.status AS status',
           'requestServices.approvedTime AS approvedTime',
@@ -417,34 +547,231 @@ export class RequestServiceService {
     thisWeek: number;
   }> {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+    ).getTime();
+    const startOfWeek = new Date(
+      now.setDate(now.getDate() - now.getDay()),
+    ).getTime();
 
     const [total, thisMonth, thisWeek] = await Promise.all([
       // Total requests
       this.requestServiceRes.count({
-        where: { fixerId }
+        where: { fixerId },
       }),
       // This month's requests
       this.requestServiceRes.count({
         where: {
           fixerId,
-          createAt: MoreThanOrEqual(startOfMonth)
-        }
+          createAt: MoreThanOrEqual(startOfMonth),
+        },
       }),
       // This week's requests
       this.requestServiceRes.count({
         where: {
           fixerId,
-          createAt: MoreThanOrEqual(startOfWeek)
-        }
-      })
+          createAt: MoreThanOrEqual(startOfWeek),
+        },
+      }),
     ]);
 
     return {
       total,
       thisMonth,
-      thisWeek
+      thisWeek,
     };
+  }
+
+  async updateRequestService(
+    id: string,
+    body: UpdateRequestServiceDto,
+    files: Express.Multer.File[],
+  ): Promise<MessageResponse> {
+    try {
+      const service = await this.requestServiceRes.findOne({
+        where: { id },
+      });
+
+      if (!service) {
+        throw new NotFoundException(`Request service with ID ${id} not found`);
+      }
+
+      const updateData: DeepPartial<RequestServiceEntity> = {
+        nameService: body.nameService,
+        listDetailService: body.listDetailService
+          ? JSON.stringify(body.listDetailService)
+          : undefined,
+        priceService: body.priceService,
+        typeEquipment: body.typeEquipment,
+        calender: body.calender,
+        address: body.address,
+        note: body.note,
+        updateAt: new Date().getTime(),
+      };
+
+      if (files && files.length > 0) {
+        // Delete old files if they exist
+        if (service.fileImage) {
+          const oldFiles = JSON.parse(service.fileImage);
+          for (const fileUrl of oldFiles) {
+            await this.cloudService.deleteFileByUrl(fileUrl, 'image');
+          }
+        }
+        // Upload new files
+        const fileUrls = await this.cloudService.uploadFilesToCloud(files);
+        updateData.fileImage = JSON.stringify(fileUrls);
+      }
+
+      await this.requestServiceRes.update(id, updateData);
+
+      const dataHistory = {
+        requestServiceId: id,
+        name: 'Yêu cầu dịch vụ đã được cập nhật',
+        type: 'Cập nhật yêu cầu dịch vụ',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+
+      return {
+        message: 'Cập nhật request service thành công',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteRequestService(id: string): Promise<MessageResponse> {
+    try {
+      const service = await this.requestServiceRes.findOne({
+        where: { id },
+      });
+
+      if (!service) {
+        throw new NotFoundException(`Request service with ID ${id} not found`);
+      }
+
+      // Delete associated files if they exist
+      if (service.fileImage) {
+        const files = JSON.parse(service.fileImage);
+        for (const fileUrl of files) {
+          await this.cloudService.deleteFileByUrl(fileUrl, 'image');
+        }
+      }
+
+      // Update status to DELETED and set deleteAt
+      service.status = ServiceStatus.DELETED;
+      service.deleteAt = new Date().getTime();
+      service.updateAt = new Date().getTime();
+      await this.requestServiceRes.save(service);
+
+      const dataHistory = {
+        requestServiceId: id,
+        name: 'Yêu cầu dịch vụ đã bị xóa',
+        type: 'Xóa yêu cầu dịch vụ',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+
+      return {
+        message: 'Xóa request service thành công',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateRequestServiceStatus(
+    id: string,
+    status: ServiceStatus,
+    guaranteeTime?: string,
+  ): Promise<void> {
+    const updateData: DeepPartial<RequestServiceEntity> = {
+      status,
+      updateAt: new Date().getTime(),
+    };
+
+    if (guaranteeTime) {
+      updateData.guaranteeTime = guaranteeTime;
+    }
+
+    await this.requestServiceRes.update(id, updateData);
+  }
+
+  private async checkAndUpdateGuaranteeStatus(
+    service: RequestServiceEntity,
+  ): Promise<RequestServiceEntity> {
+    if (
+      service.status === ServiceStatus.GUARANTEE &&
+      service.guaranteeTime &&
+      parseInt(service.guaranteeTime) < new Date().getTime()
+    ) {
+      await this.updateRequestServiceStatus(service.id, ServiceStatus.DONE);
+      service.status = ServiceStatus.DONE;
+    }
+    return service;
+  }
+
+  private async checkAndUpdateGuaranteeStatusForList(
+    services: RequestServiceEntity[],
+  ): Promise<RequestServiceEntity[]> {
+    const updatedServices = await Promise.all(
+      services.map((service) => this.checkAndUpdateGuaranteeStatus(service)),
+    );
+    return updatedServices;
+  }
+
+  private async checkAndUpdateExpiredRequests(
+    services: RequestServiceEntity[],
+  ): Promise<RequestServiceEntity[]> {
+    const now = new Date();
+    const updatedServices = await Promise.all(
+      services.map(async (service) => {
+        if (
+          service.status === ServiceStatus.PENDING &&
+          service.calender
+        ) {
+          // Parse calendar string format "14:08,Thứ Sáu, 13/06/2025"
+          const [time, dayOfWeek, date] = service.calender.split(',');
+          const [hours, minutes] = time.split(':');
+          const [day, month, year] = date.split('/');
+          
+          const calendarDate = new Date(
+            parseInt(year),
+            parseInt(month) - 1, // Month is 0-based in JavaScript
+            parseInt(day),
+            parseInt(hours),
+            parseInt(minutes)
+          );
+
+          // Chỉ đánh dấu là quá hạn nếu ngày hẹn đã qua và không phải cùng ngày
+          if (calendarDate < now && !this.isSameDay(calendarDate, now)) {
+            // Cập nhật trạng thái sang REJECTED
+            service.status = ServiceStatus.REJECTED;
+            service.updateAt = now.getTime();
+            await this.requestServiceRes.save(service);
+
+            // Tạo lịch sử cho việc từ chối tự động
+            const dataHistory = {
+              requestServiceId: service.id,
+              name: 'Yêu cầu đã bị từ chối do quá hạn',
+              type: 'Tự động từ chối yêu cầu',
+            };
+            await this.historyActiveRequestService.create(dataHistory);
+          }
+        }
+        return service;
+      }),
+    );
+    return updatedServices;
+  }
+
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
   }
 }

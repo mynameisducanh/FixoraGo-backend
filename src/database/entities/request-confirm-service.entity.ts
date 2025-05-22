@@ -6,7 +6,7 @@ export enum ServiceType {
   REPLACE = 'replace',
   TOTAL = 'total',
   GUARANTEE = 'guarantee',
-
+  COMPLETED = 'completed',
 }
 
 @Entity('requestConfirmServices')

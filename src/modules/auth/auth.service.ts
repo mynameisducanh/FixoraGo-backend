@@ -30,6 +30,7 @@ import { OtpService } from 'src/modules/otp/otp.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { FixerService } from '../fixer/fixer.service';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,7 @@ export class AuthService {
     private usersService: UsersService,
     private passwordService: PasswordService,
     private mailService: MailerService,
+    private fixerService: FixerService,
     private tokenService: TokenService,
     private configService: ConfigService,
     @Inject(forwardRef(() => OtpService))
@@ -74,7 +76,7 @@ export class AuthService {
 
       const { accessToken, refreshToken } =
         await this.tokenService.createOne(payload);
-      console.log(accessToken)
+      console.log(accessToken);
       return {
         accessToken,
         refreshToken,
@@ -149,64 +151,64 @@ export class AuthService {
     }
   }
 
-  // async registerStaff(request: RegisterStaffDto): Promise<MessageResponse> {
-  //   try {
-  //     const { email, username } = request;
+  async registerStaff(request: RegisterStaffDto): Promise<MessageResponse> {
+    try {
+      const { email, username } = request;
 
-  //     let user = await this.usersService.findByEmail(email);
-  //     if (user) {
-  //       throw new BadRequestException(MESSAGE.EMAIL_EXISTED);
-  //     }
+      let user = await this.usersService.findByEmail(email);
+      if (user) {
+        throw new BadRequestException(MESSAGE.EMAIL_EXISTED);
+      }
 
-  //     user = await this.usersService.findByUsername(username);
-  //     if (user) {
-  //       throw new BadRequestException('Username already exists');
-  //     }
+      user = await this.usersService.findByUsername(username);
+      if (user) {
+        throw new BadRequestException('Username already exists');
+      }
 
-  //     const password = generateCustomString(12);
-  //     const hashedPassword = this.passwordService.encryptPassword(password);
-  //     const userId = generateId().toLocaleLowerCase();
+      const password = generateCustomString(12);
+      const hashedPassword = this.passwordService.encryptPassword(password);
+      const userId = generateId().toLocaleLowerCase();
 
-  //     const newUser = await this.usersService.save({
-  //       id: userId,
-  //       createAt: new Date().getTime(),
-  //       updateAt: new Date().getTime(),
-  //       deleteAt: 0,
-  //       username: username,
-  //       password: hashedPassword,
-  //       authData: '',
-  //       authService: '',
-  //       email,
-  //       emailVerified: 1,
-  //       phoneVerified: 0,
-  //       infoVerified: 0,
-  //       phoneNumber: '',
-  //       firstName: request.firstName,
-  //       lastName: request.lastName,
-  //       roles: Role.Staff,
-  //       lastPasswordUpdate: new Date().getTime(),
-  //       lastPictureUpdate: 0,
-  //       address: '',
-  //       currentLocation: '',
-  //       status: 0,
-  //       lastCheckIn: 0,
-  //       timezone: timeZoneObj,
-  //     });
+      await this.usersService.save({
+        id: userId,
+        createAt: new Date().getTime(),
+        updateAt: new Date().getTime(),
+        deleteAt: 0,
+        username: username,
+        password: hashedPassword,
+        authData: '',
+        authService: '',
+        email,
+        emailVerified: 1,
+        phoneVerified: 0,
+        infoVerified: 0,
+        phoneNumber: '',
+        firstName: request.firstName,
+        lastName: request.lastName,
+        roles: Role.Fixer,
+        lastPasswordUpdate: new Date().getTime(),
+        lastPictureUpdate: 0,
+        address: request.address,
+        currentLocation: '',
+        status: 0,
+        lastCheckIn: 0,
+        timezone: timeZoneObj,
+      });
 
-  //     await this.staffService.save({
-  //       userId: newUser,
-  //       employeeCode: request.employeeCode,
-  //       position: request.position,
-  //     });
+      await this.fixerService.save({
+        insurance: request.insurance,
+        employeeCode: request.employeeCode,
+        position: request.position,
+      });
 
-  //     return {
-  //       statusCode: HttpStatus.OK,
-  //       message: MESSAGE.ACCOUNT_REGISTER_SUCCESS,
-  //     };
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
+      return {
+        statusCode: HttpStatus.OK,
+        message: MESSAGE.ACCOUNT_REGISTER_SUCCESS,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 
   // async sendVerifyEmail(
   //   request: SendEmailDto,

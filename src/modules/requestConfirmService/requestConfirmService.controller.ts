@@ -32,7 +32,6 @@ export class RequestConfirmServiceController {
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
-    console.log("a",body)
     return await this.requestConfirmServiceService.createRequestConfirmService(
       body,
       file,
@@ -51,7 +50,6 @@ export class RequestConfirmServiceController {
     @Param('requestServiceId') requestServiceId: string,
     @Query('type') type: string,
   ): Promise<RequestConfirmServiceResponse[]> {
-    console.log(requestServiceId, type);
     return await this.requestConfirmServiceService.getByRequestConfirmId(
       requestServiceId,
       type,
@@ -73,6 +71,11 @@ export class RequestConfirmServiceController {
     );
   }
 
+  @Get('check-fixer-completed/:id')
+  checkFixerCheckin(@Param('id') id: string) {
+    return this.requestConfirmServiceService.checkFixerCompleted(id);
+  }
+
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<MessageResponse> {
     return await this.requestConfirmServiceService.deleteRequestConfirmService(
@@ -83,5 +86,25 @@ export class RequestConfirmServiceController {
   @Patch('accept/:id')
   async userAccept(@Param('id') id: string): Promise<MessageResponse> {
     return await this.requestConfirmServiceService.userAccept(id);
+  }
+
+  @Get('revenue/user/:userId')
+  async getUserRevenueStatistics(@Param('userId') userId: string) {
+    return await this.requestConfirmServiceService.getUserRevenueStatistics(userId);
+  }
+
+  @Get('revenue/user/:userId/monthly')
+  async getUserMonthlyRevenue(@Param('userId') userId: string) {
+    return await this.requestConfirmServiceService.getUserMonthlyRevenue(userId);
+  }
+
+  @Get('revenue/total')
+  async getTotalRevenue() {
+    return await this.requestConfirmServiceService.getTotalRevenue();
+  }
+
+  @Get('revenue/yearly')
+  async getYearlyRevenue() {
+    return await this.requestConfirmServiceService.getYearlyRevenue();
   }
 }

@@ -27,6 +27,7 @@ import { ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 import { FilterRequestServiceDto } from './dto/filter-request-service.dto';
 import { FixerApprovalDto } from './dto/fixer-approval.dto';
+import { UpdateRequestServiceDto } from './dto/update-request-service.dto';
 
 @Controller('requestService')
 export class RequestServiceController {
@@ -40,7 +41,6 @@ export class RequestServiceController {
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<MessageResponse> {
     const body = req.body; // Đây giờ là object key-value thực tế
-    console.log(body);
     return await this.requestServiceService.createRequestService(body, files);
   }
 
@@ -60,7 +60,6 @@ export class RequestServiceController {
   async getAllByFixerId(
     @Param('id') id: string,
   ): Promise<RequestServiceResponse[]> {
-    console.log(id);
     return await this.requestServiceService.getAllByFixerId(id);
   }
 
@@ -68,6 +67,7 @@ export class RequestServiceController {
   async filterPendingOrRejected(
     @Query() filter: FilterRequestServiceDto,
   ): Promise<RequestServiceResponse[]> {
+    console.log(filter)
     return this.requestServiceService.getAllPendingOrRejected(filter);
   }
 
@@ -78,7 +78,6 @@ export class RequestServiceController {
 
   @Patch('fixer-approval')
   async fixerApproval(@Body() dto: FixerApprovalDto): Promise<MessageResponse> {
-    console.log(dto);
     return this.requestServiceService.fixerReceiveRequest(
       dto.requestId,
       dto.fixerId,
@@ -87,7 +86,6 @@ export class RequestServiceController {
 
   @Get('approved-service/:fixerId')
   async getApprovedService(@Param('fixerId') fixerId: string) {
-    console.log(fixerId)
     return await this.requestServiceService.getApprovedServiceByFixerId(
       fixerId,
     );
@@ -117,6 +115,22 @@ export class RequestServiceController {
     thisWeek: number;
   }> {
     return this.requestServiceService.getFixerRequestStats(fixerId);
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FilesInterceptor('files'))
+  @ApiConsumes('multipart/form-data')
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateRequestServiceDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<MessageResponse> {
+    return await this.requestServiceService.updateRequestService(id, body, files);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string): Promise<MessageResponse> {
+    return await this.requestServiceService.deleteRequestService(id);
   }
 
   // @Put(':id')

@@ -14,6 +14,7 @@ export enum ServiceStatus {
   COMPLETED = 'completed',
   GUARANTEE = 'guarantee',
   DELETED = 'deleted',
+  DONE = 'done',
 }
 
 @Entity('requestServices')
@@ -62,4 +63,10 @@ export class RequestServiceEntity extends BaseTimestamp {
 
   @Column({ nullable: true })
   temp: string;
+
+  @Column({ nullable: true })
+  isUrgent: string;
+
+  @Column({ nullable: true })
+  bonus: string;
 }

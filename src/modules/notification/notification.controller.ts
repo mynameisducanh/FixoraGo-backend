@@ -11,7 +11,6 @@ export class NotificationController {
 
   @Post()
   async create(@Body() createNotificationDto: CreateNotificationDto) {
-    console.log(createNotificationDto)
     return await this.notificationService.create(createNotificationDto);
   }
 

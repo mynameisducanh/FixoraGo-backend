@@ -13,6 +13,7 @@ import { RequestConfirmServiceResponse } from './types/requestConfirmService.typ
 import { CloudService } from 'src/helpers/cloud.helper';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
+import { ServiceStatus } from 'src/database/entities/request-service.entity';
 
 @Injectable()
 export class RequestConfirmServiceService {
@@ -36,7 +37,6 @@ export class RequestConfirmServiceService {
     file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
     let imageUrl = '';
-    console.log(body, file);
     if (file) {
       imageUrl = await this.cloudService.uploadFileToCloud(file);
     }
@@ -50,17 +50,30 @@ export class RequestConfirmServiceService {
       userAccept: null,
       image: imageUrl,
       note: body.note,
+      temp: body.temp,
       createAt: new Date().getTime(),
       updateAt: new Date().getTime(),
     };
 
     const savedService = await this.requestConfirmServiceRes.save(newService);
-    const dataHistory = {
-      requestServiceId: body.requestServiceId,
-      name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của bạn',
-      type: 'Đề xuất từ nhân viên',
-    };
-    await this.historyActiveRequestService.create(dataHistory);
+    let dataHistory;
+    if (body.type === ServiceType.REPAIR) {
+      dataHistory = {
+        requestServiceId: body.requestServiceId,
+        name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của khách hàng',
+        type: 'Đề xuất từ nhân viên',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+    }
+    if (body.type === ServiceType.COMPLETED) {
+      dataHistory = {
+        requestServiceId: body.requestServiceId,
+        name: 'Nhân viên đã đánh dấu là đã hoàn thành, đang chờ khách hàng xác nhận',
+        type: 'Thông báo hoàn thành từ nhân viên',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+    }
+
     return {
       message: 'Tạo request confirm service thành công',
       statusCode: HttpStatus.OK,
@@ -82,6 +95,7 @@ export class RequestConfirmServiceService {
           'requestConfirmServices.price AS price',
           'requestConfirmServices.image AS image',
           'requestConfirmServices.note AS note',
+          'requestConfirmServices.temp AS temp',
           'requestConfirmServices.createAt AS createAt',
           'requestConfirmServices.updateAt AS updateAt',
         ])
@@ -124,12 +138,13 @@ export class RequestConfirmServiceService {
           'requestConfirmServices.price AS price',
           'requestConfirmServices.image AS image',
           'requestConfirmServices.note AS note',
+          'requestConfirmServices.temp AS temp',
           'requestConfirmServices.createAt AS createAt',
           'requestConfirmServices.updateAt AS updateAt',
         ]);
       if (type === 'total') {
         queryBuilder
-          .andWhere('requestConfirmServices.type = :type', { type: 'total' })
+          .andWhere('requestConfirmServices.type = :type', { type })
           .orderBy('requestConfirmServices.createAt', 'DESC')
           .limit(1);
       } else if (type === 'repair') {
@@ -141,7 +156,6 @@ export class RequestConfirmServiceService {
       }
 
       const queryResult = await queryBuilder.getRawMany();
-      console.log(queryResult);
 
       return plainToClass(RequestConfirmServiceResponse, queryResult, {
         excludeExtraneousValues: true,
@@ -231,25 +245,56 @@ export class RequestConfirmServiceService {
           `Request confirm service with ID ${id} not found`,
         );
       }
+      let dataHistory;
+      if (service.type === 'repair') {
+        dataHistory = {
+          requestServiceId: service.requestServiceId,
+          name: 'Bạn đã xác nhận là đồng ý với đề xuất của nhân viên',
+          type: 'Bạn đã đồng ý với đề xuất',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+      }
+      if (service.type === 'total') {
+        dataHistory = {
+          requestServiceId: service.requestServiceId,
+          name: 'Khách hàng đã xác nhận là đồng ý với đề xuất của nhân viên',
+          type: 'Khách hàng đã đồng ý với đề xuất',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+      }
+      if (service.type === 'completed') {
+        dataHistory = {
+          requestServiceId: service.requestServiceId,
+          name: 'Khách hàng đã xác nhận là nhân viên đã hoàn thành',
+          type: 'Khách hàng đã xác nhận',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
 
-      // Update userAccept and updateAt
-      await this.requestConfirmServiceRes.update(id, {
-        userAccept: 'accept',
-        updateAt: new Date().getTime(),
-      });
+        if (service.temp) {
+          const warrantyDays = parseInt(service.temp);
+          const currentTime = new Date().getTime();
+          const guaranteeTime = new Date(
+            currentTime + warrantyDays * 24 * 60 * 60 * 1000,
+          )
+            .getTime()
+            .toString();
 
-      // If type is guarantee, update guaranteeTime in request service
-      if (service.type === 'guarantee' && service.temp) {
-        const requestService = await this.requestServiceRes.findOne({
-          where: { id: service.requestServiceId },
-        });
-
-        if (requestService) {
-          requestService.guaranteeTime = service.temp;
-          requestService.updateAt = new Date().getTime();
-          await this.requestServiceRes.save(requestService);
+          const requestService = await this.requestServiceRes.findOne({
+            where: { id: service.requestServiceId },
+          });
+          if (requestService) {
+            requestService.status = ServiceStatus.GUARANTEE;
+            requestService.guaranteeTime = guaranteeTime;
+            requestService.updateAt = new Date().getTime();
+            await this.requestServiceRes.save(requestService);
+          }
         }
       }
+
+      await this.requestConfirmServiceRes.update(id, {
+        userAccept: 'Accepted',
+        updateAt: new Date().getTime(),
+      });
 
       return {
         message: 'Cập nhật trạng thái chấp nhận thành công',
@@ -258,5 +303,193 @@ export class RequestConfirmServiceService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async checkFixerCompleted(
+    id: string,
+  ): Promise<{ hasCompleted: boolean; fixerId?: string }> {
+    const activityLog = await this.requestConfirmServiceRes.findOne({
+      where: {
+        requestServiceId: id,
+        type: ServiceType.COMPLETED,
+      },
+      order: { createAt: 'DESC' },
+    });
+    if (activityLog && activityLog.userId) {
+      return {
+        hasCompleted: true,
+        fixerId: activityLog.userId,
+      };
+    }
+
+    return {
+      hasCompleted: false,
+    };
+  }
+
+  // Revenue statistics methods
+  async getUserRevenueStatistics(userId: string) {
+    const currentDate = new Date();
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    ).getTime();
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0,
+    ).getTime();
+
+    // Get total revenue from all time
+    const totalRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .andWhere('requestConfirmServices.userId = :userId', { userId })
+      .getRawOne();
+
+    // Get current month revenue
+    const currentMonthRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .andWhere('requestConfirmServices.userId = :userId', { userId })
+      .andWhere(
+        'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+        {
+          startOfMonth,
+          endOfMonth,
+        },
+      )
+      .getRawOne();
+
+    // Calculate 5% fee for current month
+    const currentMonthFee = currentMonthRevenue?.total
+      ? Math.floor(parseFloat(currentMonthRevenue.total) * 0.05)
+      : 0;
+
+    return {
+      totalRevenue: totalRevenue?.total ? parseFloat(totalRevenue.total) : 0,
+      currentMonthRevenue: currentMonthRevenue?.total
+        ? parseFloat(currentMonthRevenue.total)
+        : 0,
+      currentMonthFee,
+    };
+  }
+
+  async getUserMonthlyRevenue(userId: string) {
+    const currentYear = new Date().getFullYear();
+    const monthlyRevenue = [];
+
+    for (let month = 0; month < 12; month++) {
+      const startOfMonth = new Date(currentYear, month, 1).getTime();
+      const endOfMonth = new Date(currentYear, month + 1, 0).getTime();
+
+      const revenue = await this.requestConfirmServiceRes
+        .createQueryBuilder('requestConfirmServices')
+        .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+        .where('requestConfirmServices.type = :type', {
+          type: ServiceType.TOTAL,
+        })
+        .andWhere('requestConfirmServices.userId = :userId', { userId })
+        .andWhere(
+          'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+          {
+            startOfMonth,
+            endOfMonth,
+          },
+        )
+        .getRawOne();
+
+      monthlyRevenue.push({
+        month: month + 1,
+        revenue: revenue?.total ? parseFloat(revenue.total) : 0,
+      });
+    }
+
+    return monthlyRevenue;
+  }
+
+  async getTotalRevenue() {
+    const currentDate = new Date();
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    ).getTime();
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0,
+    ).getTime();
+
+    // Get total revenue from all time
+    const totalRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .getRawOne();
+
+    // Get current month revenue
+    const currentMonthRevenue = await this.requestConfirmServiceRes
+      .createQueryBuilder('requestConfirmServices')
+      .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+      .where('requestConfirmServices.type = :type', { type: ServiceType.TOTAL })
+      .andWhere(
+        'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+        {
+          startOfMonth,
+          endOfMonth,
+        },
+      )
+      .getRawOne();
+
+    return {
+      totalRevenue: totalRevenue?.total ? parseFloat(totalRevenue.total) : 0,
+      currentMonthRevenue: currentMonthRevenue?.total
+        ? parseFloat(currentMonthRevenue.total)
+        : 0,
+    };
+  }
+
+  async getYearlyRevenue() {
+    const currentYear = new Date().getFullYear();
+    const monthlyRevenue = [];
+
+    for (let month = 0; month < 12; month++) {
+      const startOfMonth = new Date(currentYear, month, 1).getTime();
+      const endOfMonth = new Date(currentYear, month + 1, 0).getTime();
+
+      const revenue = await this.requestConfirmServiceRes
+        .createQueryBuilder('requestConfirmServices')
+        .select('SUM(CAST(requestConfirmServices.price AS DECIMAL))', 'total')
+        .where('requestConfirmServices.type = :type', {
+          type: ServiceType.TOTAL,
+        })
+        .andWhere(
+          'requestConfirmServices.createAt BETWEEN :startOfMonth AND :endOfMonth',
+          {
+            startOfMonth,
+            endOfMonth,
+          },
+        )
+        .getRawOne();
+
+      monthlyRevenue.push({
+        month: month + 1,
+        revenue: revenue?.total ? parseFloat(revenue.total) : 0,
+      });
+    }
+
+    const totalYearlyRevenue = monthlyRevenue.reduce(
+      (sum, month) => sum + month.revenue,
+      0,
+    );
+
+    return {
+      totalYearlyRevenue,
+      monthlyRevenue,
+    };
   }
 }

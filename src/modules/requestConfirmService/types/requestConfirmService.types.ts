@@ -21,6 +21,8 @@ export class RequestConfirmServiceResponse {
   image: string;
   @Expose({ name: 'note' })
   note: string;
+  @Expose({ name: 'temp' })
+  temp: string;
   @Expose({ name: 'createat' })
   @Transform(({ value }) => (value ? parseInt(value) : null))
   createAt: number;
