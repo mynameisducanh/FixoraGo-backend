@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SkillFixerEntity } from '../../database/entities/skill-fixer.entity';
-import { CreateSkillFixerDto } from './dto/create-skill-fixer.dto';
+import { CreateSkillFixerDto, CreateMultipleSkillsDto } from './dto/create-skill-fixer.dto';
 import { UpdateSkillFixerDto } from './dto/update-skill-fixer.dto';
 
 @Injectable()
@@ -17,6 +17,25 @@ export class SkillFixerService {
     return this.skillFixerRepository.save(skillFixer);
   }
 
+  async createMultipleSkills(createMultipleSkillsDto: CreateMultipleSkillsDto) {
+    const { userId, skills } = createMultipleSkillsDto;
+    
+    // Create an array of skill entities
+    const skillEntities = skills.map(skillName => 
+      this.skillFixerRepository.create({
+        userId,
+        name: skillName,
+        type: 'skill',
+        createAt: new Date().getTime(),
+        updateAt: new Date().getTime()
+      })
+    );
+
+    // Save all skills in a single transaction
+    const savedSkills = await this.skillFixerRepository.save(skillEntities);
+    return savedSkills;
+  }
+
   findAll(query: any) {
     return this.skillFixerRepository.find({
       where: query,
@@ -27,6 +46,19 @@ export class SkillFixerService {
     return this.skillFixerRepository.findOne({
       where: { id },
     });
+  }
+
+  async findAllByUserId(userId: string) {
+    const skills = await this.skillFixerRepository.find({
+      where: { userId },
+      order: { createAt: 'DESC' },
+    });
+
+    if (!skills || skills.length === 0) {
+      throw new NotFoundException(`No skills found for userId ${userId}`);
+    }
+
+    return skills;
   }
 
   async update(id: string, updateSkillFixerDto: UpdateSkillFixerDto) {

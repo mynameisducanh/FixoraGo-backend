@@ -87,4 +87,24 @@ export class RequestConfirmServiceController {
   async userAccept(@Param('id') id: string): Promise<MessageResponse> {
     return await this.requestConfirmServiceService.userAccept(id);
   }
+
+  @Get('revenue/user/:userId')
+  async getUserRevenueStatistics(@Param('userId') userId: string) {
+    return await this.requestConfirmServiceService.getUserRevenueStatistics(userId);
+  }
+
+  @Get('revenue/user/:userId/monthly')
+  async getUserMonthlyRevenue(@Param('userId') userId: string) {
+    return await this.requestConfirmServiceService.getUserMonthlyRevenue(userId);
+  }
+
+  @Get('revenue/total')
+  async getTotalRevenue() {
+    return await this.requestConfirmServiceService.getTotalRevenue();
+  }
+
+  @Get('revenue/yearly')
+  async getYearlyRevenue() {
+    return await this.requestConfirmServiceService.getYearlyRevenue();
+  }
 }
