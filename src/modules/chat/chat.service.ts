@@ -1,10 +1,10 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ChatRoom, RoomStatus } from 'src/database/entities/chat-room.entity';
-import { ChatMessage } from 'src/database/entities/chat-message.entity';
-import { CreateChatRoomDto } from 'src/modules/chat/dto/create-room.dto';
-import { DataResponse, MessageResponse } from 'src/common/types/response';
+import { ChatRoom, RoomStatus } from '../../database/entities/chat-room.entity';
+import { ChatMessage } from '../../database/entities/chat-message.entity';
+import { CreateChatRoomDto } from './dto/create-room.dto';
+import { DataResponse, MessageResponse } from '../../common/types/response';
 
 @Injectable()
 export class ChatService {
@@ -28,8 +28,53 @@ export class ChatService {
       message: 'Tạo chat room thành công',
     };
   }
+
   async getRoomById(roomId: string): Promise<ChatRoom> {
     return this.roomRepository.findOne({ where: { id: roomId } });
+  }
+
+  async getRoomDetail(roomId: string): Promise<DataResponse<{ room: ChatRoom; messages: ChatMessage[] }>> {
+    const room = await this.roomRepository.findOne({ where: { id: roomId } });
+    if (!room) {
+      throw new NotFoundException('Không tìm thấy phòng chat ');
+    }
+
+    const messages = await this.messageRepository.find({
+      where: { roomId },
+      order: { createdAt: 'ASC' },
+    });
+
+    return {
+      data: { room, messages },
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin phòng chat thành công',
+    };
+  }
+
+  async getRoomsByUserId(userId: string): Promise<DataResponse<ChatRoom[]>> {
+    const rooms = await this.roomRepository.find({
+      where: { userId },
+      order: { updatedAt: 'DESC' },
+    });
+
+    return {
+      data: rooms,
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách phòng chat thành công',
+    };
+  }
+
+  async getRoomsByFixerId(fixerId: string): Promise<DataResponse<ChatRoom[]>> {
+    const rooms = await this.roomRepository.find({
+      where: { staffId: fixerId },
+      order: { updatedAt: 'DESC' },
+    });
+
+    return {
+      data: rooms,
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách phòng chat thành công',
+    };
   }
   
   async saveMessage(messageDto: {
@@ -45,17 +90,67 @@ export class ChatService {
   }
   
   async closeRoom(roomId: string): Promise<ChatRoom> {
-    const room = await this.roomRepository.findOne({ id: roomId });
+    const room = await this.roomRepository.findOne({ where: { id: roomId } });
     if (room) {
       room.status = RoomStatus.CLOSED;
       return await this.roomRepository.save(room);
     }
     throw new Error('Room not found');
   }
+
+  async updateRoomStatusByUserAndFixer(
+    userId: string,
+    staffId: string,
+  ): Promise<MessageResponse> {
+    const room = await this.roomRepository.findOne({
+      where: {
+        userId,
+        staffId,
+        status: RoomStatus.ACTIVE,
+      },
+    });
+
+    if (!room) {
+      throw new NotFoundException('Không tìm thấy phòng chat');
+    }
+
+    room.status = RoomStatus.INACTIVE;
+    await this.roomRepository.save(room);
+
+    return {
+      message: 'Cập nhật trạng thái phòng chat thành công',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
   async getMessagesByRoom(roomId: string): Promise<ChatMessage[]> {
     return this.messageRepository.find({
       where: { roomId },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  async findOrCreateRoom(userId: string, staffId: string): Promise<ChatRoom> {
+    // Find existing room
+    const existingRoom = await this.roomRepository.findOne({
+      where: {
+        userId,
+        staffId,
+      },
+    });
+
+    if (existingRoom) {
+      // If room exists, update status to ACTIVE
+      existingRoom.status = RoomStatus.ACTIVE;
+      return await this.roomRepository.save(existingRoom);
+    }
+
+    // If no room exists, create new one
+    const newRoom = {
+      userId,
+      staffId,
+      status: RoomStatus.ACTIVE,
+    };
+    return await this.roomRepository.save(newRoom);
   }
 }

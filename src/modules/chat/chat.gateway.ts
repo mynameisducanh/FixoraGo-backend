@@ -77,7 +77,7 @@ export class ChatGateway
 
     return room;
   }
-  
+
   @SubscribeMessage('joinRoom')
   handleJoinRoom(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
     const { roomId } = data;
@@ -85,13 +85,14 @@ export class ChatGateway
     client.join(roomId);
     client.emit('joinedRoom', { roomId });
   }
-  
+
   @SubscribeMessage('sendMessage')
   async handleMessage(
     @MessageBody() data: any,
     @ConnectedSocket() client: Socket,
   ) {
     // Parse nếu là JSON string
+    console.log(data);
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
@@ -99,6 +100,7 @@ export class ChatGateway
         throw new Error('Invalid JSON payload');
       }
     }
+    console.log(data);
 
     const { roomId, senderId, senderName, receiverId, receiverName, content } =
       data;

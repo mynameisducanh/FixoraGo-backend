@@ -148,6 +148,35 @@ export class UserController {
     });
   }
 
+  @Get(':userId/name')
+  @ApiOperation({ summary: 'Get user name and username by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the user name and username',
+    schema: {
+      type: 'object',
+      properties: {
+        username: {
+          type: 'string',
+          description: 'Username of the user',
+        },
+        fullName: {
+          type: 'string',
+          description: 'Full name of the user (firstName + lastName)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getUserNameById(
+    @Param('userId') userId: string,
+  ): Promise<{ username: string; fullName: string }> {
+    return await this.userService.getUserNameById(userId);
+  }
+
   @Patch('profile/:userId')
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')

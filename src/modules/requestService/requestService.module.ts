@@ -11,6 +11,7 @@ import { ListDetailServiceController } from 'src/modules/listDetailService/listD
 import { ListDetailServiceService } from 'src/modules/listDetailService/listDetailService.service';
 import { RequestServiceController } from 'src/modules/requestService/requestService.controller';
 import { RequestServiceService } from 'src/modules/requestService/requestService.service';
+import { ChatModule } from '../chat/chat.module';
 
 @Global()
 @Module({
@@ -20,7 +21,8 @@ import { RequestServiceService } from 'src/modules/requestService/requestService
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),
-    HistoryActiveRequestModule,//
+    HistoryActiveRequestModule,
+    ChatModule,
   ],
   providers: [RequestServiceService, CloudService],
   controllers: [RequestServiceController],

@@ -21,6 +21,7 @@ import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/hi
 import { generateId } from 'src/utils/function';
 import { MoreThanOrEqual } from 'typeorm';
 import { UpdateRequestServiceDto } from 'src/modules/requestService/dto/update-request-service.dto';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class RequestServiceService {
@@ -30,6 +31,7 @@ export class RequestServiceService {
     private readonly requestServiceRes: Repository<RequestServiceEntity>,
     private readonly userService: UsersService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
+    private readonly chatService: ChatService,
   ) {}
 
   async save(
@@ -239,17 +241,34 @@ export class RequestServiceService {
 
     // Filter by name service if provided
     if (filter.nameService) {
-      queryBuilder.andWhere('requestServices.nameService ILIKE :nameService', {
-        nameService: `%${filter.nameService}%`,
-      });
+      const serviceNames = filter.nameService.split(',').map(name => name.trim());
+      if (serviceNames.length > 0) {
+        const conditions = serviceNames.map((_, index) => 
+          `requestServices.nameService ILIKE :nameService${index}`
+        );
+        queryBuilder.andWhere(`(${conditions.join(' OR ')})`);
+        
+        // Add parameters for each service name
+        serviceNames.forEach((name, index) => {
+          queryBuilder.setParameter(`nameService${index}`, `%${name}%`);
+        });
+      }
     }
 
     // Filter by districts if provided
     if (filter.districts) {
-      const districtList = filter.districts.split(',');
-      queryBuilder.andWhere('requestServices.address ILIKE ANY(:districts)', {
-        districts: districtList.map((district) => `%${district}%`),
-      });
+      const districtList = filter.districts.split(',').map(district => district.trim());
+      if (districtList.length > 0) {
+        const conditions = districtList.map((_, index) => 
+          `requestServices.address ILIKE :district${index}`
+        );
+        queryBuilder.andWhere(`(${conditions.join(' OR ')})`);
+        
+        // Add parameters for each district
+        districtList.forEach((district, index) => {
+          queryBuilder.setParameter(`district${index}`, `%${district}%`);
+        });
+      }
     }
 
     // Filter by time
@@ -398,6 +417,13 @@ export class RequestServiceService {
     requestService.status = ServiceStatus.APPROVED;
     requestService.approvedTime = new Date().getTime().toString();
     requestService.updateAt = new Date().getTime();
+
+    // Tạo chat room cho người dùng và fixer
+    await this.chatService.findOrCreateRoom(
+      requestService.userId,
+      fixerId,
+    );
+
     const dataHistory = {
       requestServiceId: id,
       name: 'Yêu cầu đã được nhận bởi nhân viên',
@@ -522,6 +548,12 @@ export class RequestServiceService {
     if (!requestService) {
       throw new NotFoundException('Không tìm thấy request service');
     }
+
+    // Tìm và đóng chat room nếu có
+    await this.chatService.updateRoomStatusByUserAndFixer(
+      requestService.userId,
+      requestService.fixerId,
+    );
 
     // Update status to REJECTED
     requestService.status = ServiceStatus.REJECTED;
@@ -728,21 +760,18 @@ export class RequestServiceService {
     const now = new Date();
     const updatedServices = await Promise.all(
       services.map(async (service) => {
-        if (
-          service.status === ServiceStatus.PENDING &&
-          service.calender
-        ) {
+        if (service.status === ServiceStatus.PENDING && service.calender) {
           // Parse calendar string format "14:08,Thứ Sáu, 13/06/2025"
           const [time, dayOfWeek, date] = service.calender.split(',');
           const [hours, minutes] = time.split(':');
           const [day, month, year] = date.split('/');
-          
+
           const calendarDate = new Date(
             parseInt(year),
             parseInt(month) - 1, // Month is 0-based in JavaScript
             parseInt(day),
             parseInt(hours),
-            parseInt(minutes)
+            parseInt(minutes),
           );
 
           // Chỉ đánh dấu là quá hạn nếu ngày hẹn đã qua và không phải cùng ngày
