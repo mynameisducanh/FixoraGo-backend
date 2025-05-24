@@ -11,6 +11,7 @@ import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { CloudService } from 'src/helpers/cloud.helper';
 import { MessageResponse } from 'src/common/types/response';
 import { HttpStatus } from '@nestjs/common';
+import { ChatMessage } from 'src/database/entities/chat-message.entity';
 
 @Injectable()
 export class UsersService {
@@ -229,6 +230,38 @@ export class UsersService {
     return {
       message: 'Profile updated successfully',
       statusCode: HttpStatus.OK,
+    };
+  }
+
+  async getMessagesByRoom(roomId: string): Promise<ChatMessage[]> {
+    return this.messageRepository.find({
+      where: { roomId },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async getUserNameById(userId: string): Promise<{ username: string; fullName: string }> {
+    const user = await this.userRes
+      .createQueryBuilder('user')
+      .where('user.id = :userId', { userId })
+      .select([
+        'user.Username as username',
+        'user.FirstName as firstName',
+        'user.LastName as lastName',
+      ])
+      .getRawOne();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const fullName = user.firstName && user.lastName 
+      ? `${user.firstName} ${user.lastName}`
+      : '';
+
+    return {
+      username: user.username || '',
+      fullName,
     };
   }
 }
