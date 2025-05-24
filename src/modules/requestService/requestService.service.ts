@@ -419,10 +419,10 @@ export class RequestServiceService {
     requestService.updateAt = new Date().getTime();
 
     // Tạo chat room cho người dùng và fixer
-    await this.chatService.createRoom({
-      userId: requestService.userId,
-      staffId: fixerId,
-    });
+    await this.chatService.findOrCreateRoom(
+      requestService.userId,
+      fixerId,
+    );
 
     const dataHistory = {
       requestServiceId: id,

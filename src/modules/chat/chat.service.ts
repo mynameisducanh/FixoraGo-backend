@@ -129,4 +129,28 @@ export class ChatService {
       order: { createdAt: 'ASC' },
     });
   }
+
+  async findOrCreateRoom(userId: string, staffId: string): Promise<ChatRoom> {
+    // Find existing room
+    const existingRoom = await this.roomRepository.findOne({
+      where: {
+        userId,
+        staffId,
+      },
+    });
+
+    if (existingRoom) {
+      // If room exists, update status to ACTIVE
+      existingRoom.status = RoomStatus.ACTIVE;
+      return await this.roomRepository.save(existingRoom);
+    }
+
+    // If no room exists, create new one
+    const newRoom = {
+      userId,
+      staffId,
+      status: RoomStatus.ACTIVE,
+    };
+    return await this.roomRepository.save(newRoom);
+  }
 }
