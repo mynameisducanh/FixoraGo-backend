@@ -10,6 +10,7 @@ import {
 export enum RoomStatus {
   ACTIVE = 'active',
   CLOSED = 'closed',
+  INACTIVE = 'inactive',
 }
 
 @Exclude()
