@@ -12,6 +12,7 @@ import { ListDetailServiceService } from 'src/modules/listDetailService/listDeta
 import { RequestServiceController } from 'src/modules/requestService/requestService.controller';
 import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 import { ChatModule } from '../chat/chat.module';
+import { NotificationModule } from 'src/modules/notification/notification.module';
 
 @Global()
 @Module({
@@ -23,6 +24,7 @@ import { ChatModule } from '../chat/chat.module';
     }),
     HistoryActiveRequestModule,
     ChatModule,
+    NotificationModule
   ],
   providers: [RequestServiceService, CloudService],
   controllers: [RequestServiceController],
