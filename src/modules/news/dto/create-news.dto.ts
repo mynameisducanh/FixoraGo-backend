@@ -15,10 +15,5 @@ export class CreateNewsDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
-  image?: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsString()
   description?: string;
 }
