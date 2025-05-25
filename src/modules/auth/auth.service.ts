@@ -61,6 +61,12 @@ export class AuthService {
         if (user.emailVerified === 0) {
           throw new BadRequestException(MESSAGE.ACCOUNT_INACTIVE);
         }
+
+        // Check InfoVerified score
+        const checkResult = await this.usersService.checkAndLockLowInfoVerifiedAccount(user.id);
+        if (checkResult.isLocked) {
+          throw new BadRequestException(checkResult.message);
+        }
       }
 
       if (
@@ -122,7 +128,7 @@ export class AuthService {
         email,
         emailVerified: 0,
         phoneVerified: 0,
-        infoVerified: 0,
+        infoVerified: 100,
         phoneNumber: '',
         firstName: '',
         lastName: '',

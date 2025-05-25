@@ -24,6 +24,12 @@ export class UserResponse {
   emailVerified: boolean;
 
   @Expose()
+  phoneVerified: number;
+
+  @Expose({ name: 'infoverified' })
+  infoVerified: number;
+
+  @Expose()
   email: string;
 
   @Expose()
