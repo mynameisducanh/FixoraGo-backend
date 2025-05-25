@@ -22,6 +22,11 @@ import { generateId } from 'src/utils/function';
 import { MoreThanOrEqual } from 'typeorm';
 import { UpdateRequestServiceDto } from 'src/modules/requestService/dto/update-request-service.dto';
 import { ChatService } from '../chat/chat.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
+import {
+  NotificationPriority,
+  NotificationType,
+} from 'src/database/entities/notification.entity';
 
 @Injectable()
 export class RequestServiceService {
@@ -32,6 +37,7 @@ export class RequestServiceService {
     private readonly userService: UsersService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
     private readonly chatService: ChatService,
+    private notificationService: NotificationService,
   ) {}
 
   async save(
@@ -77,6 +83,13 @@ export class RequestServiceService {
       name: 'Yêu cầu đã được gửi vui lòng chờ phản hồi từ nhân viên',
       type: 'Yêu cầu dịch vụ đã được tạo',
     };
+     await this.notificationService.create({
+      type: NotificationType.SYSTEM,
+      priority: NotificationPriority.MEDIUM,
+      title: 'Tạo yêu cầu thành công',
+      content: `Bạn vừa tạo thành công 1 yêu cầu, cảm ơn bạn đã sử dụng dịch vụ`,
+      userId: body.userId,
+    });
     await this.historyActiveRequestService.create(dataHistory);
     return {
       message: 'Tạo request service thành công',
@@ -241,13 +254,16 @@ export class RequestServiceService {
 
     // Filter by name service if provided
     if (filter.nameService) {
-      const serviceNames = filter.nameService.split(',').map(name => name.trim());
+      const serviceNames = filter.nameService
+        .split(',')
+        .map((name) => name.trim());
       if (serviceNames.length > 0) {
-        const conditions = serviceNames.map((_, index) => 
-          `requestServices.nameService ILIKE :nameService${index}`
+        const conditions = serviceNames.map(
+          (_, index) =>
+            `requestServices.nameService ILIKE :nameService${index}`,
         );
         queryBuilder.andWhere(`(${conditions.join(' OR ')})`);
-        
+
         // Add parameters for each service name
         serviceNames.forEach((name, index) => {
           queryBuilder.setParameter(`nameService${index}`, `%${name}%`);
@@ -257,13 +273,15 @@ export class RequestServiceService {
 
     // Filter by districts if provided
     if (filter.districts) {
-      const districtList = filter.districts.split(',').map(district => district.trim());
+      const districtList = filter.districts
+        .split(',')
+        .map((district) => district.trim());
       if (districtList.length > 0) {
-        const conditions = districtList.map((_, index) => 
-          `requestServices.address ILIKE :district${index}`
+        const conditions = districtList.map(
+          (_, index) => `requestServices.address ILIKE :district${index}`,
         );
         queryBuilder.andWhere(`(${conditions.join(' OR ')})`);
-        
+
         // Add parameters for each district
         districtList.forEach((district, index) => {
           queryBuilder.setParameter(`district${index}`, `%${district}%`);
@@ -423,6 +441,13 @@ export class RequestServiceService {
     //   requestService.userId,
     //   fixerId,
     // );
+    await this.notificationService.create({
+      type: NotificationType.SYSTEM,
+      priority: NotificationPriority.MEDIUM,
+      title: 'Nhân viên đã nhận yêu cầu',
+      content: `Yêu cầu đã được nhận bởi nhân viên`,
+      userId: requestService.userId,
+    });
     await this.chatService.createRoom({
       userId: requestService.userId,
       staffId: fixerId,
@@ -534,7 +559,7 @@ export class RequestServiceService {
     await this.userService.updateInfoVerifiedScore(
       requestService.userId,
       5,
-      'subtract'
+      'subtract',
     );
 
     const dataHistory = {
@@ -574,7 +599,7 @@ export class RequestServiceService {
       await this.userService.updateInfoVerifiedScore(
         requestService.fixerId,
         10,
-        'subtract'
+        'subtract',
       );
     }
 
@@ -818,7 +843,10 @@ export class RequestServiceService {
                 type: 'Tự động từ chối yêu cầu',
               };
               await this.historyActiveRequestService.create(dataHistory);
-            } else if (service.status === ServiceStatus.APPROVED && service.fixerId) {
+            } else if (
+              service.status === ServiceStatus.APPROVED &&
+              service.fixerId
+            ) {
               // Cập nhật trạng thái sang CANCELED cho request đã có fixer
               service.status = ServiceStatus.CANCELED;
               service.updateAt = now.getTime();
@@ -828,7 +856,7 @@ export class RequestServiceService {
               await this.userService.updateInfoVerifiedScore(
                 service.fixerId,
                 10,
-                'subtract'
+                'subtract',
               );
 
               // Tạo lịch sử cho việc hủy tự động

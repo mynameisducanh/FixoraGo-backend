@@ -31,6 +31,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { FixerService } from '../fixer/fixer.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType, NotificationPriority } from 'src/database/entities/notification.entity';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +44,7 @@ export class AuthService {
     private fixerService: FixerService,
     private tokenService: TokenService,
     private configService: ConfigService,
+    private notificationService: NotificationService,
     @Inject(forwardRef(() => OtpService))
     private otpService: OtpService,
   ) {}
@@ -148,6 +151,15 @@ export class AuthService {
       const html = CONFIRM_REGISTER('vi', fullName, otp.otp);
 
       this.mailService.sendMail(email, html.titles, html.content);
+
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: 'Chào mừng bạn đến với Fixorago',
+        content: `Xin chào ${username}, cảm ơn bạn đã đăng ký tài khoản tại Fixorago. Vui lòng xác thực email của bạn để bắt đầu sử dụng dịch vụ.`,
+        userId: userId,
+      });
+
       return {
         statusCode: HttpStatus.OK,
         message: MESSAGE.ACCOUNT_REGISTER_SUCCESS,
@@ -205,6 +217,15 @@ export class AuthService {
         insurance: request.insurance,
         employeeCode: request.employeeCode,
         position: request.position,
+      });
+
+      // Create welcome notification for staff
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: 'Chào mừng bạn đến với Fixorago',
+        content: `Xin chào ${username}, cảm ơn bạn đã tham gia đội ngũ nhân viên của Fixorago. Chúc bạn có những trải nghiệm tốt với chúng tôi.`,
+        userId: userId,
       });
 
       return {
