@@ -650,14 +650,8 @@ export class RequestServiceService {
       }
 
       const updateData: DeepPartial<RequestServiceEntity> = {
-        nameService: body.nameService,
-        listDetailService: body.listDetailService
-          ? JSON.stringify(body.listDetailService)
-          : undefined,
-        priceService: body.priceService,
         typeEquipment: body.typeEquipment,
         calender: body.calender,
-        address: body.address,
         note: body.note,
         updateAt: new Date().getTime(),
       };

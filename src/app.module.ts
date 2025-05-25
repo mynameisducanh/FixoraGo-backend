@@ -29,6 +29,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { ActivityLogModule } from './modules/activity-log/activity-log.module';
 import { SkillFixerModule } from './modules/skill-fixer/skill-fixer.module';
 import { FixerModule } from './modules/fixer/fixer.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -68,7 +69,8 @@ import { FixerModule } from './modules/fixer/fixer.module';
     NotificationModule,
     ActivityLogModule,
     SkillFixerModule,
-    FixerModule
+    FixerModule,
+    SearchModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -6,12 +6,21 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFiles,
+  UploadedFile,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { News } from 'src/database/entities/news.entity';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('news')
 @Controller('news')
@@ -20,13 +29,18 @@ export class NewsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new news article' })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @ApiResponse({
     status: 201,
     description: 'The news article has been successfully created.',
     type: News,
   })
-  create(@Body() createNewsDto: CreateNewsDto) {
-    return this.newsService.create(createNewsDto);
+  create(
+    @Body() createNewsDto: CreateNewsDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.newsService.create(createNewsDto, file);
   }
 
   @Get()
