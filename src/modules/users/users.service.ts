@@ -55,7 +55,7 @@ export class UsersService {
         'user.EmailVerified as emailVerified',
         'user.PhoneNumber as phoneNumber',
         'user.PhoneVerified as phoneVerified',
-        'user.InfoVerified as infoVerified',
+        'user.InfoVerified as infoverified',
         'user.Roles as roles',
         'user.Address as address',
         'user.CurrentLocation as currentLocation',
@@ -159,7 +159,7 @@ export class UsersService {
         'user.EmailVerified as emailVerified',
         'user.PhoneNumber as phoneNumber',
         'user.PhoneVerified as phoneVerified',
-        'user.InfoVerified as infoVerified',
+        'user.InfoVerified as infoverified',
         'user.Roles as roles',
         'user.Address as address',
         'user.CurrentLocation as currentLocation',
@@ -233,35 +233,72 @@ export class UsersService {
     };
   }
 
-  async getMessagesByRoom(roomId: string): Promise<ChatMessage[]> {
-    return this.messageRepository.find({
-      where: { roomId },
-      order: { createdAt: 'ASC' },
-    });
-  }
-
-  async getUserNameById(userId: string): Promise<{ username: string; fullName: string }> {
+  async getUserNameById(userId: string): Promise<{ username: string; fullName: string; avatarUrl: string }> {
     const user = await this.userRes
       .createQueryBuilder('user')
       .where('user.id = :userId', { userId })
       .select([
         'user.Username as username',
-        'user.FirstName as firstName',
-        'user.LastName as lastName',
+        'user.FirstName as firstname',
+        'user.LastName as lastname',
+        'user.AvatarUrl as avatarurl',
       ])
       .getRawOne();
-
+      
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    const fullName = user.firstName && user.lastName 
-      ? `${user.firstName} ${user.lastName}`
+    const fullName = user.firstname && user.lastname 
+      ? `${user.firstname} ${user.lastname}`
       : '';
-
     return {
       username: user.username || '',
       fullName,
+      avatarUrl: user.avatarurl || '',
     };
+  }
+
+  async updateInfoVerifiedScore(userId: string, points: number, operation: 'add' | 'subtract'): Promise<UsersEntity> {
+    const user = await this.getOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Calculate new score based on operation
+    let newScore = user.infoVerified;
+    if (operation === 'add') {
+      newScore = user.infoVerified + points;
+    } else {
+      newScore = user.infoVerified - points;
+    }
+
+    // Ensure score stays within bounds
+    newScore = Math.min(Math.max(newScore, 50), 110);
+    
+    user.infoVerified = newScore;
+    user.updateAt = new Date().getTime();
+
+    return await this.userRes.save(user);
+  }
+
+  async checkAndLockLowInfoVerifiedAccount(userId: string): Promise<{ isLocked: boolean; message?: string }> {
+    const user = await this.getOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.infoVerified < 50) {
+      user.status = 1; // Lock status
+      user.updateAt = new Date().getTime();
+      await this.userRes.save(user);
+      
+      return {
+        isLocked: true,
+        message: 'Tài khoản đã bị khóa do điểm đánh giá thấp'
+      };
+    }
+
+    return { isLocked: false };
   }
 }
