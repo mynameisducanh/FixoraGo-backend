@@ -8,6 +8,7 @@ import {
   Put,
   UseInterceptors,
   UploadedFile,
+  Post,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -24,12 +25,35 @@ import { UsersService } from 'src/modules/users/users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { MessageResponse } from 'src/common/types/response';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @ApiBearerAuth()
 @ApiTags('Users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UsersService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiResponse({
+    status: 201,
+    description: 'User has been created successfully',
+    type: UserResponse,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid input data',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Email or username already exists',
+  })
+  async createUser(@Body() createUserDto: CreateUserDto): Promise<UserResponse> {
+    const user = await this.userService.create(createUserDto);
+    return plainToClass(UserResponse, user, {
+      excludeExtraneousValues: true,
+    });
+  }
 
   @Get('count')
   @ApiOperation({ summary: 'Get total number of users' })

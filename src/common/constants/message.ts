@@ -149,3 +149,51 @@ export const RESET_PASSWORD = (
 
   return { titles: titles[language] || '', content: content[language] || '' };
 };
+
+export const CONFIRM_REGISTER_BY_ADMIN = (
+  language: string,
+  fullName: string,
+  username: string,
+  password: string,
+) => {
+  const titles: Record<string, string> = {
+    vi: 'Thông báo tài khoản',
+    en: 'Account Notification',
+    ja: 'アカウント通知',
+  };
+  const content: Record<string, string> = {
+    vi: `
+      Chào mừng <strong>${fullName},</strong> đến với <strong>FixoraGo.</strong><br><br>
+      Chúng tôi đã tạo tài khoản cho bạn với các thông tin đăng nhập dưới đây:
+      <ul>
+        <li><strong>Tài khoản:</strong> ${username}</li>
+        <li><strong>Mật khẩu:</strong> ${password}</li>
+      </ul>
+      Bạn có thể sử dụng tài khoản này để đăng nhập vào hệ thống.<br><br>
+      ${MAIL_FOOTER(language)}
+    `,
+    en: `
+      Hello <strong>${fullName}</strong>,<br><br> 
+      Welcome to <strong>InWEB - a comprehensive solution for CAD design on the web</strong>.<br><br> 
+      We have created an account for you. Please find your login details below:<br>
+      <ul>
+        <li><strong>Account:</strong> ${username}</li>
+        <li><strong>Password:</strong> ${password}</li>
+      </ul>
+      You can use this account to log into the system.<br><br> 
+      ${MAIL_FOOTER(language)}
+    `,
+    ja: `
+    こんにちは <strong>${fullName}</strong> 様、
+    <strong>InWEB - Web上でのCAD設計のための包括的ソリューション</strong> へようこそ。<br><br>
+    お客様のためにアカウントを作成いたしました。以下のログイン情報をご確認ください：
+    <ul> 
+      <li><strong>アカウント：</strong> ${username}</li> 
+      <li><strong>パスワード：</strong> ${password}</li> 
+    </ul> このアカウントを使用してシステムにログインできます。<br><br> 
+    ${MAIL_FOOTER(language)}
+  `,
+  };
+
+  return { titles: titles[language] || '', content: content[language] || '' };
+};
