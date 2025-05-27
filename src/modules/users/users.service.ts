@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersEntity } from 'src/database/entities/users.entity';
@@ -12,6 +13,11 @@ import { CloudService } from 'src/helpers/cloud.helper';
 import { MessageResponse } from 'src/common/types/response';
 import { HttpStatus } from '@nestjs/common';
 import { ChatMessage } from 'src/database/entities/chat-message.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { PasswordService } from 'src/helpers/bcrypt.helper';
+import { v4 as uuidv4 } from 'uuid';
+import { CONFIRM_REGISTER_BY_ADMIN } from 'src/common/constants/message';
+import { MailerService } from 'src/helpers/mailer.helper';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +25,8 @@ export class UsersService {
     @InjectRepository(UsersEntity)
     private readonly userRes: Repository<UsersEntity>,
     private readonly cloudService: CloudService,
+    private readonly passwordService: PasswordService,
+    private readonly mailService: MailerService,
   ) {}
 
   async save(user: DeepPartial<UsersEntity>): Promise<UsersEntity> {
@@ -52,7 +60,7 @@ export class UsersService {
         'user.FirstName as firstName',
         'user.LastName as lastName',
         'user.Email as email',
-        'user.EmailVerified as emailVerified',
+        'user.EmailVerified as emailverified',
         'user.PhoneNumber as phoneNumber',
         'user.PhoneVerified as phoneVerified',
         'user.InfoVerified as infoverified',
@@ -132,7 +140,7 @@ export class UsersService {
         'user.FirstName as firstName',
         'user.LastName as lastName',
         'user.Email as email',
-        'user.EmailVerified as emailVerified',
+        'user.EmailVerified as emailverified',
         'user.PhoneNumber as phoneNumber',
         'user.PhoneVerified as phoneVerified',
         'user.InfoVerified as infoVerified',
@@ -156,7 +164,7 @@ export class UsersService {
         'user.FirstName as firstName',
         'user.LastName as lastName',
         'user.Email as email',
-        'user.EmailVerified as emailVerified',
+        'user.EmailVerified as emailverified',
         'user.PhoneNumber as phoneNumber',
         'user.PhoneVerified as phoneVerified',
         'user.InfoVerified as infoverified',
@@ -233,7 +241,9 @@ export class UsersService {
     };
   }
 
-  async getUserNameById(userId: string): Promise<{ username: string; fullName: string; avatarUrl: string }> {
+  async getUserNameById(
+    userId: string,
+  ): Promise<{ username: string; fullName: string; avatarUrl: string }> {
     const user = await this.userRes
       .createQueryBuilder('user')
       .where('user.id = :userId', { userId })
@@ -244,14 +254,15 @@ export class UsersService {
         'user.AvatarUrl as avatarurl',
       ])
       .getRawOne();
-      
+
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    const fullName = user.firstname && user.lastname 
-      ? `${user.firstname} ${user.lastname}`
-      : '';
+    const fullName =
+      user.firstname && user.lastname
+        ? `${user.firstname} ${user.lastname}`
+        : '';
     return {
       username: user.username || '',
       fullName,
@@ -259,7 +270,11 @@ export class UsersService {
     };
   }
 
-  async updateInfoVerifiedScore(userId: string, points: number, operation: 'add' | 'subtract'): Promise<UsersEntity> {
+  async updateInfoVerifiedScore(
+    userId: string,
+    points: number,
+    operation: 'add' | 'subtract',
+  ): Promise<UsersEntity> {
     const user = await this.getOne(userId);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -275,14 +290,16 @@ export class UsersService {
 
     // Ensure score stays within bounds
     newScore = Math.min(Math.max(newScore, 50), 110);
-    
+
     user.infoVerified = newScore;
     user.updateAt = new Date().getTime();
 
     return await this.userRes.save(user);
   }
 
-  async checkAndLockLowInfoVerifiedAccount(userId: string): Promise<{ isLocked: boolean; message?: string }> {
+  async checkAndLockLowInfoVerifiedAccount(
+    userId: string,
+  ): Promise<{ isLocked: boolean; message?: string }> {
     const user = await this.getOne(userId);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -292,13 +309,55 @@ export class UsersService {
       user.status = 1; // Lock status
       user.updateAt = new Date().getTime();
       await this.userRes.save(user);
-      
+
       return {
         isLocked: true,
-        message: 'Tài khoản đã bị khóa do điểm đánh giá thấp'
+        message: 'Tài khoản đã bị khóa do điểm đánh giá thấp',
       };
     }
 
     return { isLocked: false };
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<UsersEntity> {
+    // Check if passwords match
+    if (createUserDto.password !== createUserDto.confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    // Check if email already exists
+    const existingEmail = await this.findByEmail(createUserDto.email);
+    if (existingEmail) {
+      throw new ConflictException('Email already exists');
+    }
+
+    // Check if username already exists
+    const existingUsername = await this.findByUsername(createUserDto.username);
+    if (existingUsername) {
+      throw new ConflictException('Username already exists');
+    }
+
+    // Create new user
+    const newUser = this.userRes.create({
+      id: uuidv4(),
+      firstName: createUserDto.firstName,
+      lastName: createUserDto.lastName,
+      username: createUserDto.username,
+      email: createUserDto.email,
+      phoneNumber: createUserDto.phoneNumber,
+      password: this.passwordService.encryptPassword(createUserDto.password),
+      roles: createUserDto.roles,
+      status: 0, // Active by default
+      createAt: new Date().getTime(),
+      updateAt: new Date().getTime(),
+      emailVerified: 1,
+      phoneVerified: 0,
+      infoVerified: 100, // Default info verified score
+    });
+    const fullName = newUser.firstName + ' ' + newUser.lastName;
+
+    const html = CONFIRM_REGISTER_BY_ADMIN('vi', fullName, newUser.username , createUserDto.password );
+    this.mailService.sendMail(newUser.email, html.titles, html.content);
+    return await this.userRes.save(newUser);
   }
 }
