@@ -9,6 +9,7 @@ import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
 import { CloudService } from '../../helpers/cloud.helper';
 import { HistoryActiveRequestService } from '../historyActiveRequest/historyActiveRequest.service';
+import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
 
 @Injectable()
 export class ActivityLogService {
@@ -17,6 +18,7 @@ export class ActivityLogService {
     private activityLogRepository: Repository<ActivityLogEntity>,
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
+    private readonly revenueManagerService: RevenueManagerService,
   ) {}
 
   async create(
@@ -41,6 +43,27 @@ export class ActivityLogService {
         type: 'Thông báo từ nhân viên',
       };
       await this.historyActiveRequestService.create(dataHistory);
+    }
+    if (createActivityLogDto.activityType === 'staff_payfee') {
+      const dataRevenue = {
+        userId: createActivityLogDto.fixerId,
+        paidFees: Number(createActivityLogDto.note),
+        status: 'UnConfirm',
+        temp: 'staff_payfee',
+        createAt: new Date().getTime(),
+        updateAt: new Date().getTime(),
+      };
+      await this.revenueManagerService.create(dataRevenue);
+      await this.revenueManagerService.updateUnpaidFeesWithOperation(
+        createActivityLogDto.userId + '_total',
+        Number(createActivityLogDto.note),
+        'subtract',
+      );
+      await this.revenueManagerService.updatePaidFeesWithOperation(
+        createActivityLogDto.userId + '_total',
+        Number(createActivityLogDto.note),
+        'add',
+      );
     }
     return await this.activityLogRepository.save(activityLog);
   }

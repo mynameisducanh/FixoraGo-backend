@@ -56,23 +56,38 @@ export class UserController {
   }
 
   @Get('count')
-  @ApiOperation({ summary: 'Get total number of users' })
+  @ApiOperation({ summary: 'Get total number of users and monthly registration stats' })
   @ApiResponse({
     status: 200,
-    description: 'Returns the total number of users in the system',
+    description: 'Returns total number of users and monthly registration statistics',
     schema: {
       type: 'object',
       properties: {
-        total: {
+        totalUsers: {
           type: 'number',
-          description: 'Total number of users',
+          description: 'Total number of users in the system',
+        },
+        monthlyStats: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              month: {
+                type: 'string',
+                description: 'Month name',
+              },
+              monthlyUserRegister: {
+                type: 'number',
+                description: 'Number of users registered in this month',
+              },
+            },
+          },
         },
       },
     },
   })
-  async countUsers(): Promise<{ total: number }> {
-    const total = await this.userService.countUsers();
-    return { total };
+  async countUsers() {
+    return await this.userService.countUsers();
   }
 
   @Get()

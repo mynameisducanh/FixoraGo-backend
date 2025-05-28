@@ -30,6 +30,7 @@ import { ActivityLogModule } from './modules/activity-log/activity-log.module';
 import { SkillFixerModule } from './modules/skill-fixer/skill-fixer.module';
 import { FixerModule } from './modules/fixer/fixer.module';
 import { SearchModule } from './modules/search/search.module';
+import { RevenueManagerModule } from './modules/revenue-manager/revenue-manager.module';
 
 @Module({
   imports: [
@@ -70,7 +71,8 @@ import { SearchModule } from './modules/search/search.module';
     ActivityLogModule,
     SkillFixerModule,
     FixerModule,
-    SearchModule
+    SearchModule,
+    RevenueManagerModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,6 +14,7 @@ import { CloudService } from 'src/helpers/cloud.helper';
 import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/historyActiveRequest.service';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 import { ServiceStatus } from 'src/database/entities/request-service.entity';
+import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
 
 @Injectable()
 export class RequestConfirmServiceService {
@@ -24,6 +25,7 @@ export class RequestConfirmServiceService {
     private readonly requestServiceRes: Repository<RequestServiceEntity>,
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
+    private readonly revenueManagerService: RevenueManagerService,
   ) {}
 
   async save(
@@ -289,6 +291,25 @@ export class RequestConfirmServiceService {
             await this.requestServiceRes.save(requestService);
           }
         }
+        const createData = {
+          userId: service.userId,
+          totalRevenue: Number(service.price),
+          unpaidFees: Number(service.price) * 0.1,
+          status: 'active',
+          temp:'bill',
+          createAt: new Date().getTime(),
+          updateAt: new Date().getTime(),
+        };
+        await this.revenueManagerService.create(createData);
+        await this.revenueManagerService.incrementTotalRevenue(
+          service.userId + '_total',
+          Number(service.price),
+        );
+        await this.revenueManagerService.updateUnpaidFeesWithOperation(
+          service.userId + '_total',
+          Number(service.price) * 0.1,
+          'add',
+        );
       }
 
       await this.requestConfirmServiceRes.update(id, {
@@ -364,9 +385,9 @@ export class RequestConfirmServiceService {
       )
       .getRawOne();
 
-    // Calculate 5% fee for current month
+    // Calculate 10% fee for current month
     const currentMonthFee = currentMonthRevenue?.total
-      ? Math.floor(parseFloat(currentMonthRevenue.total) * 0.05)
+      ? Math.floor(parseFloat(currentMonthRevenue.total) * 0.1)
       : 0;
 
     return {

@@ -18,6 +18,7 @@ import { PasswordService } from 'src/helpers/bcrypt.helper';
 import { v4 as uuidv4 } from 'uuid';
 import { CONFIRM_REGISTER_BY_ADMIN } from 'src/common/constants/message';
 import { MailerService } from 'src/helpers/mailer.helper';
+import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +28,7 @@ export class UsersService {
     private readonly cloudService: CloudService,
     private readonly passwordService: PasswordService,
     private readonly mailService: MailerService,
+    private readonly revenueManagerService: RevenueManagerService,
   ) {}
 
   async save(user: DeepPartial<UsersEntity>): Promise<UsersEntity> {
@@ -127,8 +129,58 @@ export class UsersService {
     return await this.userRes.save(user);
   }
 
-  async countUsers(): Promise<number> {
-    return await this.userRes.count();
+  async countUsers(): Promise<{ totalUsers: number; monthlyStats: Array<{ month: string; monthlyUserRegister: number }> }> {
+    const totalUsers = await this.userRes.count();
+
+    // Lấy thống kê người dùng đăng ký theo tháng trong năm hiện tại
+    const currentYear = new Date().getFullYear();
+    const startDate = new Date(currentYear, 0, 1).getTime();
+    const endDate = new Date(currentYear, 11, 31).getTime();
+
+    const monthlyStats = await this.userRes
+      .createQueryBuilder('user')
+      .select([
+        'EXTRACT(MONTH FROM to_timestamp("CreateAt"/1000)) as month',
+        'COUNT(*) as monthlyUserRegister',
+      ])
+      .where('"CreateAt" BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .groupBy('EXTRACT(MONTH FROM to_timestamp("CreateAt"/1000))')
+      .orderBy('month', 'ASC')
+      .getRawMany();
+
+    // Chuyển đổi dữ liệu theo format yêu cầu
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    const formattedMonthlyStats = monthNames.map((month, index) => {
+      const stat = monthlyStats.find(
+        (s) => Math.floor(Number(s.month)) - 1 === index,
+      );
+      return {
+        month,
+        monthlyUserRegister: Number(stat?.monthlyuserregister || 0),
+      };
+    });
+
+    return {
+      totalUsers,
+      monthlyStats: formattedMonthlyStats,
+    };
   }
 
   async getAllUsers(): Promise<UsersEntity[]> {
@@ -143,6 +195,7 @@ export class UsersService {
         'user.EmailVerified as emailverified',
         'user.PhoneNumber as phoneNumber',
         'user.PhoneVerified as phoneVerified',
+        'user.AvatarUrl as avatarurl',
         'user.InfoVerified as infoVerified',
         'user.Roles as roles',
         'user.Address as address',
@@ -151,6 +204,7 @@ export class UsersService {
         'user.CreateAt as createAt',
         'user.LastCheckIn as lastCheckIn',
       ])
+      .addOrderBy('user.CreateAt', 'DESC')
       .getRawMany();
   }
 
@@ -173,7 +227,7 @@ export class UsersService {
         'user.CurrentLocation as currentLocation',
         'user.Status as status',
         'user.LastCheckIn as lastCheckIn',
-        'user.AvatarUrl as avatarurl',
+        'user.AvatarUrl as avatarUrl',
         'user.Gioitinh as gioitinh',
         'user.AuthData as authData',
         'user.createAt as createat',
@@ -181,6 +235,40 @@ export class UsersService {
         'user.deleteAt as deleteat',
       ])
       .getRawOne();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return user;
+  }
+
+  async getUserByUserId2(userId: string): Promise<UsersEntity> {
+    const user = await this.userRes.findOne({
+      where: { id: userId },
+      select: [
+        'id',
+        'username',
+        'firstName',
+        'lastName',
+        'email',
+        'emailVerified',
+        'phoneNumber',
+        'phoneVerified',
+        'infoVerified',
+        'roles',
+        'address',
+        'currentLocation',
+        'status',
+        'lastCheckIn',
+        'avatarUrl',
+        'gioitinh',
+        'authData',
+        'createAt',
+        'updateAt',
+        'deleteAt',
+      ],
+    });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
@@ -352,12 +440,30 @@ export class UsersService {
       updateAt: new Date().getTime(),
       emailVerified: 1,
       phoneVerified: 0,
-      infoVerified: 100, // Default info verified score
+      infoVerified: 100,
     });
     const fullName = newUser.firstName + ' ' + newUser.lastName;
 
-    const html = CONFIRM_REGISTER_BY_ADMIN('vi', fullName, newUser.username , createUserDto.password );
+    const html = CONFIRM_REGISTER_BY_ADMIN(
+      'vi',
+      fullName,
+      newUser.username,
+      createUserDto.password,
+    );
     this.mailService.sendMail(newUser.email, html.titles, html.content);
+    if (createUserDto.roles === 'system_fixer') {
+      const createData = {
+        userId: newUser.id,
+        totalRevenue: 0,
+        paidFees: 0,
+        unpaidFees: 0,
+        status: 'active',
+        temp: newUser.id + '_total',
+        createAt: new Date().getTime(),
+        updateAt: new Date().getTime(),
+      };
+      await this.revenueManagerService.create(createData);
+    }
     return await this.userRes.save(newUser);
   }
 }
