@@ -13,6 +13,7 @@ import { RevenueManagerService } from './revenue-manager.service';
 import { CreateRevenueManagerDto } from './dto/create-revenue-manager.dto';
 import { UpdateRevenueManagerDto } from './dto/update-revenue-manager.dto';
 import { RevenueManagerEntity } from 'src/database/entities/revenue-manager.entity';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('revenue-manager')
 export class RevenueManagerController {
@@ -141,12 +142,23 @@ export class RevenueManagerController {
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: string,
+    @Body('amount') amount: string,
   ): Promise<RevenueManagerEntity> {
-    return this.revenueManagerService.updateStatus(id, status);
+    return this.revenueManagerService.updateStatus(id, status, amount);
   }
 
   @Get('recent/bills')
   getAllBills() {
     return this.revenueManagerService.getAllBills();
+  }
+
+  @Get('all/staff-payfees')
+  @ApiOperation({ summary: 'Get all staff pay fees with user information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all staff pay fees with user information',
+  })
+  async getAllStaffPayFees() {
+    return await this.revenueManagerService.getAllStaffPayFees();
   }
 }

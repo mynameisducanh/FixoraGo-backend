@@ -10,6 +10,12 @@ import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
 import { CloudService } from '../../helpers/cloud.helper';
 import { HistoryActiveRequestService } from '../historyActiveRequest/historyActiveRequest.service';
 import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
+import { generateId } from 'src/utils/function';
+import { NotificationService } from '../notification/notification.service';
+import {
+  NotificationPriority,
+  NotificationType,
+} from 'src/database/entities/notification.entity';
 
 @Injectable()
 export class ActivityLogService {
@@ -19,6 +25,7 @@ export class ActivityLogService {
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
     private readonly revenueManagerService: RevenueManagerService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -29,8 +36,9 @@ export class ActivityLogService {
     if (file) {
       imageUrl = await this.cloudService.uploadFileToCloud(file);
     }
-
+    const id = generateId().toLocaleLowerCase();
     const activityLog = this.activityLogRepository.create({
+      id: id,
       ...createActivityLogDto,
       imageUrl: imageUrl || createActivityLogDto.imageUrl,
     });
@@ -46,24 +54,22 @@ export class ActivityLogService {
     }
     if (createActivityLogDto.activityType === 'staff_payfee') {
       const dataRevenue = {
-        userId: createActivityLogDto.fixerId,
+        userId: createActivityLogDto.userId,
         paidFees: Number(createActivityLogDto.note),
         status: 'UnConfirm',
         temp: 'staff_payfee',
+        activityId: id,
         createAt: new Date().getTime(),
         updateAt: new Date().getTime(),
       };
       await this.revenueManagerService.create(dataRevenue);
-      await this.revenueManagerService.updateUnpaidFeesWithOperation(
-        createActivityLogDto.userId + '_total',
-        Number(createActivityLogDto.note),
-        'subtract',
-      );
-      await this.revenueManagerService.updatePaidFeesWithOperation(
-        createActivityLogDto.userId + '_total',
-        Number(createActivityLogDto.note),
-        'add',
-      );
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: 'Gửi yêu cầu thành công',
+        content: `Chúng tôi đã nhận được yêu cầu và bill nộp phí của bạn, chúng thôi sẽ xác nhận và thông báo tới bạn sớm nhất`,
+        userId: createActivityLogDto.userId,
+      });
     }
     return await this.activityLogRepository.save(activityLog);
   }

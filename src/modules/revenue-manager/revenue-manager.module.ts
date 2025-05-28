@@ -4,11 +4,13 @@ import { RevenueManagerEntity } from 'src/database/entities/revenue-manager.enti
 import { RevenueManagerController } from './revenue-manager.controller';
 import { RevenueManagerService } from './revenue-manager.service';
 import { UsersModule } from '../users/users.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RevenueManagerEntity]),
     forwardRef(() => UsersModule),
+    NotificationModule
   ],
   controllers: [RevenueManagerController],
   providers: [RevenueManagerService],
