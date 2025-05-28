@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { RevenueManagerEntity } from 'src/database/entities/revenue-manager.entity';
 import { CreateRevenueManagerDto } from './dto/create-revenue-manager.dto';
 import { UpdateRevenueManagerDto } from './dto/update-revenue-manager.dto';
 import { UsersService } from '../users/users.service';
+import {
+  NotificationPriority,
+  NotificationType,
+} from 'src/database/entities/notification.entity';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class RevenueManagerService {
@@ -13,6 +23,7 @@ export class RevenueManagerService {
     private readonly revenueManagerRepository: Repository<RevenueManagerEntity>,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async save(
@@ -198,7 +209,6 @@ export class RevenueManagerService {
       .orderBy('month', 'ASC')
       .getRawMany();
 
-
     const monthlyUnpaidFeeStats = await this.revenueManagerRepository
       .createQueryBuilder('rm')
       .select([
@@ -276,12 +286,41 @@ export class RevenueManagerService {
     const now = new Date();
     return this.getYearlyRevenueStatistics(now.getFullYear());
   }
-
+  //bổ sung ngày trong thông báo
   async updateStatus(
     id: string,
     status: string,
+    amount: string,
   ): Promise<RevenueManagerEntity> {
     const revenueManager = await this.findOne(id);
+    if (status === 'active') {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: 'Yêu cầu nộp phí đã được chấp nhận',
+        content: `Chúng tôi đã chấp nhật yêu cầu nộp phí của bạn, phí của bạn đã được cập nhật`,
+        userId: revenueManager.userId,
+      });
+      await this.updatePaidFeesWithOperation(
+        revenueManager.userId + '_total',
+        Number(amount),
+        'add',
+      );
+      await this.updateUnpaidFeesWithOperation(
+        revenueManager.userId + '_total',
+        Number(amount),
+        'subtract',
+      );
+    }
+    if (status === 'reject') {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: 'Yêu cầu nộp phí đã bị từ chối',
+        content: `Chúng tôi đã nhận thấy bill của bạn có vấn đề, mọi thắc mắc xin liên hệ 099999992`,
+        userId: revenueManager.userId,
+      });
+    }
     revenueManager.status = status;
     revenueManager.updateAt = new Date().getTime();
     return await this.revenueManagerRepository.save(revenueManager);
@@ -312,5 +351,30 @@ export class RevenueManagerService {
     );
 
     return billsWithUserInfo;
+  }
+
+  async getAllStaffPayFees() {
+    const staffPayFees = await this.revenueManagerRepository
+      .createQueryBuilder('rm')
+      .where('rm.temp = :temp', { temp: 'staff_payfee' })
+      .orderBy('rm."CreateAt"', 'DESC')
+      .getMany();
+
+    // Lấy thông tin user cho mỗi record
+    const staffPayFeesWithUserInfo = await Promise.all(
+      staffPayFees.map(async (fee) => {
+        const userInfo = await this.usersService.getUserByUserId2(fee.userId);
+        return {
+          ...fee,
+          user: {
+            fullName: `${userInfo.firstName} ${userInfo.lastName}`,
+            username: userInfo.username,
+            email: userInfo.email,
+          },
+        };
+      }),
+    );
+
+    return staffPayFeesWithUserInfo;
   }
 }

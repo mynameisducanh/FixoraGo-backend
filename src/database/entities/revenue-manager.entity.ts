@@ -32,6 +32,9 @@ export class RevenueManagerEntity extends BaseTimestamp {
   @Column({ type: 'varchar', default: 'active' })
   status: string;
 
-  @Column({ type: 'varchar', nullable: true  })
+  @Column({ type: 'varchar', nullable: true })
   temp: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  activityId: string;
 }
