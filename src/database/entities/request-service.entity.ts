@@ -14,7 +14,6 @@ export enum ServiceStatus {
   COMPLETED = 'completed',
   GUARANTEE = 'guarantee',
   DELETED = 'deleted',
-  DONE = 'done',
   CANCELED = 'deleted',
 }
 

@@ -5,12 +5,14 @@ import { RevenueManagerController } from './revenue-manager.controller';
 import { RevenueManagerService } from './revenue-manager.service';
 import { UsersModule } from '../users/users.module';
 import { NotificationModule } from '../notification/notification.module';
+import { ActivityLogModule } from '../activity-log/activity-log.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RevenueManagerEntity]),
     forwardRef(() => UsersModule),
-    NotificationModule
+    NotificationModule,
+    forwardRef(() => ActivityLogModule),
   ],
   controllers: [RevenueManagerController],
   providers: [RevenueManagerService],

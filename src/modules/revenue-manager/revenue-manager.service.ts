@@ -15,6 +15,7 @@ import {
   NotificationType,
 } from 'src/database/entities/notification.entity';
 import { NotificationService } from '../notification/notification.service';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class RevenueManagerService {
@@ -24,6 +25,8 @@ export class RevenueManagerService {
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => ActivityLogService))
+    private readonly activityLogService: ActivityLogService,
   ) {}
 
   async save(
@@ -311,15 +314,18 @@ export class RevenueManagerService {
         Number(amount),
         'subtract',
       );
+      await this.activityLogService.updateTemp(revenueManager.activityId , 'confirmed')
     }
     if (status === 'reject') {
       await this.notificationService.create({
         type: NotificationType.SYSTEM,
         priority: NotificationPriority.MEDIUM,
         title: 'Yêu cầu nộp phí đã bị từ chối',
-        content: `Chúng tôi đã nhận thấy bill của bạn có vấn đề, mọi thắc mắc xin liên hệ 099999992`,
+        content: `Chúng tôi đã nhận thấy hóa đơn của bạn có vấn đề, mọi thắc mắc xin liên hệ 099999992`,
         userId: revenueManager.userId,
       });
+      await this.activityLogService.updateTemp(revenueManager.activityId , 'reject')
+
     }
     revenueManager.status = status;
     revenueManager.updateAt = new Date().getTime();
