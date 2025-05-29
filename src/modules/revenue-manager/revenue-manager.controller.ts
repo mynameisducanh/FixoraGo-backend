@@ -38,6 +38,11 @@ export class RevenueManagerController {
     return this.revenueManagerService.findOne(id);
   }
 
+  @Get('/getbytemp/:temp')
+  findByTemp(@Param('temp') temp: string): Promise<RevenueManagerEntity> {
+    return this.revenueManagerService.findByTemp(temp);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,

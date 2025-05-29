@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivityLogEntity } from '../../database/entities/activity-log.entity';
 import { ActivityLogService } from './activity-log.service';
@@ -17,7 +17,7 @@ import { NotificationModule } from '../notification/notification.module';
       storage: multer.memoryStorage(),
     }),
     HistoryActiveRequestModule,
-    RevenueManagerModule,
+    forwardRef(() => RevenueManagerModule),
     NotificationModule
   ],
   providers: [ActivityLogService, CloudService],

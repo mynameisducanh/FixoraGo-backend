@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -16,6 +21,9 @@ import {
   NotificationPriority,
   NotificationType,
 } from 'src/database/entities/notification.entity';
+import { FilterActivityLogDto, TimeSort } from './dto/filter-activity-log.dto';
+import { plainToClass } from 'class-transformer';
+import { ActivityLogResponse } from './types/activity-log.types';
 
 @Injectable()
 export class ActivityLogService {
@@ -24,6 +32,7 @@ export class ActivityLogService {
     private activityLogRepository: Repository<ActivityLogEntity>,
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
+    @Inject(forwardRef(() => RevenueManagerService))
     private readonly revenueManagerService: RevenueManagerService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -41,6 +50,8 @@ export class ActivityLogService {
       id: id,
       ...createActivityLogDto,
       imageUrl: imageUrl || createActivityLogDto.imageUrl,
+      createAt: new Date().getTime(),
+      updateAt: new Date().getTime(),
     });
     let dataHistory;
 
@@ -76,6 +87,49 @@ export class ActivityLogService {
 
   async findAll(): Promise<ActivityLogEntity[]> {
     return await this.activityLogRepository.find();
+  }
+
+  async getAllByFilter(
+    filter: FilterActivityLogDto,
+  ): Promise<ActivityLogEntity[]> {
+    const queryBuilder =
+      this.activityLogRepository.createQueryBuilder('activityLogs');
+
+    if (filter.activityType) {
+      queryBuilder.where('activityLogs.activityType = :activityType', {
+        activityType: filter.activityType,
+      });
+    }
+    // Sort by time
+    if (filter.sortTime === TimeSort.NEWEST) {
+      queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
+    } else if (filter.sortTime === TimeSort.NEAREST) {
+      queryBuilder.orderBy('requestServices.CreateAt', 'ASC');
+    } else {
+      // Default order
+      queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
+    }
+    queryBuilder.addSelect([
+      'activityLogs.id AS id',
+      'activityLogs.activityType AS activitytype',
+      'activityLogs.fixerId AS fixerid',
+      'activityLogs.userId AS userid',
+      'activityLogs.requestServiceId AS requestserviceid',
+      'activityLogs.requestConfirmId AS requestconfirmid',
+      'activityLogs.note AS note',
+      'activityLogs.imageUrl AS imageurl',
+      'activityLogs.address AS address',
+      'activityLogs.note AS note',
+      'activityLogs.temp AS temp',
+      'activityLogs.DeleteAt AS deleteAt',
+      'activityLogs.CreateAt AS createAt',
+      'activityLogs.temp AS temp',
+    ]);
+    const result = await queryBuilder.getRawMany();
+    const items = plainToClass(ActivityLogResponse, result, {
+      excludeExtraneousValues: true,
+    });
+    return items;
   }
 
   async findOne(id: string): Promise<ActivityLogEntity> {
@@ -144,5 +198,27 @@ export class ActivityLogService {
     return {
       hasCheckin: false,
     };
+  }
+
+  async findAllStaffPayfee(userId?: string): Promise<ActivityLogEntity[]> {
+    const whereCondition: any = {
+      activityType: ActivityType.STAFF_PAYFEE,
+    };
+
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
+    return await this.activityLogRepository.find({
+      where: whereCondition,
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async updateTemp(id: string, temp: string): Promise<ActivityLogEntity> {
+    const activityLog = await this.findOne(id);
+    activityLog.temp = temp;
+    activityLog.updateAt = new Date().getTime();
+    return await this.activityLogRepository.save(activityLog);
   }
 }

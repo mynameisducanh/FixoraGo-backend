@@ -777,8 +777,8 @@ export class RequestServiceService {
       service.guaranteeTime &&
       parseInt(service.guaranteeTime) < new Date().getTime()
     ) {
-      await this.updateRequestServiceStatus(service.id, ServiceStatus.DONE);
-      service.status = ServiceStatus.DONE;
+      await this.updateRequestServiceStatus(service.id, ServiceStatus.COMPLETED);
+      service.status = ServiceStatus.COMPLETED;
 
       // Tạo lịch sử khi thời gian bảo hành hết hạn
       const dataHistory = {
