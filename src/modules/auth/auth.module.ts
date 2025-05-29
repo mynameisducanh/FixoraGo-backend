@@ -10,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FixerModule } from '../fixer/fixer.module';
 import { StaffModule } from '../staffs/staffs.module';
 import { UsersModule } from '../users/users.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Global()
 @Module({
@@ -18,7 +19,8 @@ import { UsersModule } from '../users/users.module';
     FixerModule,
     StaffModule,
     UsersModule,
-    ConfigModule
+    ConfigModule,
+    NotificationModule
   ],
   providers: [AuthService, MailerService, PasswordService],
   controllers: [AuthController],

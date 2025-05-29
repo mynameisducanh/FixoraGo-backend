@@ -20,8 +20,14 @@ export class UserResponse {
   )
   fullName: string;
 
+  @Expose({ name: 'emailverified' })
+  emailVerified: number;
+
   @Expose()
-  emailVerified: boolean;
+  phoneVerified: number;
+
+  @Expose({ name: 'infoverified' })
+  infoVerified: number;
 
   @Expose()
   email: string;

@@ -7,6 +7,8 @@ import { CloudService } from '../../helpers/cloud.helper';
 import { MulterModule } from '@nestjs/platform-express/multer';
 import multer from 'multer';
 import { HistoryActiveRequestModule } from '../historyActiveRequest/historyActiveRequest.module';
+import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { HistoryActiveRequestModule } from '../historyActiveRequest/historyActiv
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),
-    HistoryActiveRequestModule
+    HistoryActiveRequestModule,
+    RevenueManagerModule,
+    NotificationModule
   ],
   providers: [ActivityLogService, CloudService],
   controllers: [ActivityLogController],

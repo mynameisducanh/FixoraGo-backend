@@ -22,6 +22,11 @@ import { generateId } from 'src/utils/function';
 import { MoreThanOrEqual } from 'typeorm';
 import { UpdateRequestServiceDto } from 'src/modules/requestService/dto/update-request-service.dto';
 import { ChatService } from '../chat/chat.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
+import {
+  NotificationPriority,
+  NotificationType,
+} from 'src/database/entities/notification.entity';
 
 @Injectable()
 export class RequestServiceService {
@@ -32,6 +37,7 @@ export class RequestServiceService {
     private readonly userService: UsersService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
     private readonly chatService: ChatService,
+    private notificationService: NotificationService,
   ) {}
 
   async save(
@@ -77,6 +83,13 @@ export class RequestServiceService {
       name: 'Yêu cầu đã được gửi vui lòng chờ phản hồi từ nhân viên',
       type: 'Yêu cầu dịch vụ đã được tạo',
     };
+     await this.notificationService.create({
+      type: NotificationType.SYSTEM,
+      priority: NotificationPriority.MEDIUM,
+      title: 'Tạo yêu cầu thành công',
+      content: `Bạn vừa tạo thành công 1 yêu cầu, cảm ơn bạn đã sử dụng dịch vụ`,
+      userId: body.userId,
+    });
     await this.historyActiveRequestService.create(dataHistory);
     return {
       message: 'Tạo request service thành công',
@@ -241,13 +254,16 @@ export class RequestServiceService {
 
     // Filter by name service if provided
     if (filter.nameService) {
-      const serviceNames = filter.nameService.split(',').map(name => name.trim());
+      const serviceNames = filter.nameService
+        .split(',')
+        .map((name) => name.trim());
       if (serviceNames.length > 0) {
-        const conditions = serviceNames.map((_, index) => 
-          `requestServices.nameService ILIKE :nameService${index}`
+        const conditions = serviceNames.map(
+          (_, index) =>
+            `requestServices.nameService ILIKE :nameService${index}`,
         );
         queryBuilder.andWhere(`(${conditions.join(' OR ')})`);
-        
+
         // Add parameters for each service name
         serviceNames.forEach((name, index) => {
           queryBuilder.setParameter(`nameService${index}`, `%${name}%`);
@@ -257,13 +273,15 @@ export class RequestServiceService {
 
     // Filter by districts if provided
     if (filter.districts) {
-      const districtList = filter.districts.split(',').map(district => district.trim());
+      const districtList = filter.districts
+        .split(',')
+        .map((district) => district.trim());
       if (districtList.length > 0) {
-        const conditions = districtList.map((_, index) => 
-          `requestServices.address ILIKE :district${index}`
+        const conditions = districtList.map(
+          (_, index) => `requestServices.address ILIKE :district${index}`,
         );
         queryBuilder.andWhere(`(${conditions.join(' OR ')})`);
-        
+
         // Add parameters for each district
         districtList.forEach((district, index) => {
           queryBuilder.setParameter(`district${index}`, `%${district}%`);
@@ -419,11 +437,21 @@ export class RequestServiceService {
     requestService.updateAt = new Date().getTime();
 
     // Tạo chat room cho người dùng và fixer
-    await this.chatService.findOrCreateRoom(
-      requestService.userId,
-      fixerId,
-    );
-
+    // await this.chatService.findOrCreateRoom(
+    //   requestService.userId,
+    //   fixerId,
+    // );
+    await this.notificationService.create({
+      type: NotificationType.SYSTEM,
+      priority: NotificationPriority.MEDIUM,
+      title: 'Nhân viên đã nhận yêu cầu',
+      content: `Yêu cầu đã được nhận bởi nhân viên`,
+      userId: requestService.userId,
+    });
+    await this.chatService.createRoom({
+      userId: requestService.userId,
+      staffId: fixerId,
+    });
     const dataHistory = {
       requestServiceId: id,
       name: 'Yêu cầu đã được nhận bởi nhân viên',
@@ -527,6 +555,13 @@ export class RequestServiceService {
     requestService.deleteAt = new Date().getTime();
     requestService.updateAt = new Date().getTime();
 
+    // Trừ 5 điểm InfoVerified của user
+    await this.userService.updateInfoVerifiedScore(
+      requestService.userId,
+      5,
+      'subtract',
+    );
+
     const dataHistory = {
       requestServiceId: id,
       name: 'Yêu cầu đã bị hủy bởi người dùng',
@@ -558,6 +593,15 @@ export class RequestServiceService {
     // Update status to REJECTED
     requestService.status = ServiceStatus.REJECTED;
     requestService.updateAt = new Date().getTime();
+
+    // Trừ 10 điểm InfoVerified của fixer
+    if (requestService.fixerId) {
+      await this.userService.updateInfoVerifiedScore(
+        requestService.fixerId,
+        10,
+        'subtract',
+      );
+    }
 
     const dataHistory = {
       requestServiceId: id,
@@ -631,14 +675,8 @@ export class RequestServiceService {
       }
 
       const updateData: DeepPartial<RequestServiceEntity> = {
-        nameService: body.nameService,
-        listDetailService: body.listDetailService
-          ? JSON.stringify(body.listDetailService)
-          : undefined,
-        priceService: body.priceService,
         typeEquipment: body.typeEquipment,
         calender: body.calender,
-        address: body.address,
         note: body.note,
         updateAt: new Date().getTime(),
       };
@@ -741,6 +779,22 @@ export class RequestServiceService {
     ) {
       await this.updateRequestServiceStatus(service.id, ServiceStatus.DONE);
       service.status = ServiceStatus.DONE;
+
+      // Tạo lịch sử khi thời gian bảo hành hết hạn
+      const dataHistory = {
+        requestServiceId: service.id,
+        name: 'Thời gian bảo hành đã hết',
+        type: 'Hết thời gian bảo hành',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+
+      // Cập nhật trạng thái chat room thành inactive
+      if (service.userId && service.fixerId) {
+        await this.chatService.updateRoomStatusByUserAndFixer(
+          service.userId,
+          service.fixerId,
+        );
+      }
     }
     return service;
   }
@@ -760,7 +814,7 @@ export class RequestServiceService {
     const now = new Date();
     const updatedServices = await Promise.all(
       services.map(async (service) => {
-        if (service.status === ServiceStatus.PENDING && service.calender) {
+        if (service.calender) {
           // Parse calendar string format "14:08,Thứ Sáu, 13/06/2025"
           const [time, dayOfWeek, date] = service.calender.split(',');
           const [hours, minutes] = time.split(':');
@@ -776,18 +830,51 @@ export class RequestServiceService {
 
           // Chỉ đánh dấu là quá hạn nếu ngày hẹn đã qua và không phải cùng ngày
           if (calendarDate < now && !this.isSameDay(calendarDate, now)) {
-            // Cập nhật trạng thái sang REJECTED
-            service.status = ServiceStatus.REJECTED;
-            service.updateAt = now.getTime();
-            await this.requestServiceRes.save(service);
+            if (service.status === ServiceStatus.PENDING) {
+              // Cập nhật trạng thái sang REJECTED cho request chưa có fixer
+              service.status = ServiceStatus.REJECTED;
+              service.updateAt = now.getTime();
+              await this.requestServiceRes.save(service);
 
-            // Tạo lịch sử cho việc từ chối tự động
-            const dataHistory = {
-              requestServiceId: service.id,
-              name: 'Yêu cầu đã bị từ chối do quá hạn',
-              type: 'Tự động từ chối yêu cầu',
-            };
-            await this.historyActiveRequestService.create(dataHistory);
+              // Tạo lịch sử cho việc từ chối tự động
+              const dataHistory = {
+                requestServiceId: service.id,
+                name: 'Yêu cầu đã bị từ chối do quá hạn',
+                type: 'Tự động từ chối yêu cầu',
+              };
+              await this.historyActiveRequestService.create(dataHistory);
+            } else if (
+              service.status === ServiceStatus.APPROVED &&
+              service.fixerId
+            ) {
+              // Cập nhật trạng thái sang CANCELED cho request đã có fixer
+              service.status = ServiceStatus.CANCELED;
+              service.updateAt = now.getTime();
+              await this.requestServiceRes.save(service);
+
+              // Trừ 10 điểm InfoVerified của fixer
+              await this.userService.updateInfoVerifiedScore(
+                service.fixerId,
+                10,
+                'subtract',
+              );
+
+              // Tạo lịch sử cho việc hủy tự động
+              const dataHistory = {
+                requestServiceId: service.id,
+                name: 'Yêu cầu đã bị hủy do quá hạn',
+                type: 'Tự động hủy yêu cầu',
+              };
+              await this.historyActiveRequestService.create(dataHistory);
+
+              // Cập nhật trạng thái chat room thành inactive
+              if (service.userId && service.fixerId) {
+                await this.chatService.updateRoomStatusByUserAndFixer(
+                  service.userId,
+                  service.fixerId,
+                );
+              }
+            }
           }
         }
         return service;

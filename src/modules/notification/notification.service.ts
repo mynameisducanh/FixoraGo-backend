@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import {
   NotificationEntity,
   NotificationStatus,
@@ -13,7 +13,11 @@ export class NotificationService {
     @InjectRepository(NotificationEntity)
     private notificationRepository: Repository<NotificationEntity>,
   ) {}
-
+  async save(
+    notification: DeepPartial<NotificationEntity>,
+  ): Promise<NotificationEntity> {
+    return await this.notificationRepository.save(notification);
+  }
   async create(
     createNotificationDto: CreateNotificationDto,
   ): Promise<NotificationEntity> {

@@ -15,11 +15,13 @@ export class NotificationController {
   }
 
   @Get()
+  @JwtAuth()
   async findAll(
     @User() user: JwtPayload,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
+    console.log(user)
     return await this.notificationService.findAll(user.id, page, limit);
   }
 
