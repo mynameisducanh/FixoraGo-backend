@@ -8,6 +8,7 @@ import { MailerService } from 'src/helpers/mailer.helper';
 import { ConfigModule } from '@nestjs/config';
 import { CloudService } from 'src/helpers/cloud.helper';
 import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module';
+import { ActivityLogModule } from '../activity-log/activity-log.module';
 
 @Global()
 @Module({
@@ -15,6 +16,7 @@ import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module'
     ConfigModule,
     TypeOrmModule.forFeature([UsersEntity]),
     forwardRef(() => RevenueManagerModule),
+    forwardRef(() => ActivityLogModule),
   ],
   providers: [UsersService, PasswordService, MailerService, CloudService],
   controllers: [UserController],

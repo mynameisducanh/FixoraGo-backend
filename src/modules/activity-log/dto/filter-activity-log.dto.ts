@@ -2,6 +2,7 @@ import { IsString, IsOptional, IsEnum } from 'class-validator';
 import { ActivityType } from '../../../database/entities/activity-log.entity';
 export enum TimeSort {
   NEWEST = 'newest',
+  OLDEST = 'oldest',
   NEAREST = 'nearest',
   URGENT = 'urgent',
   EXPIRINGSOON = 'expiring-soon',

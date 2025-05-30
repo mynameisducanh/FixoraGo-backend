@@ -9,6 +9,7 @@ import multer from 'multer';
 import { HistoryActiveRequestModule } from '../historyActiveRequest/historyActiveRequest.module';
 import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module';
 import { NotificationModule } from '../notification/notification.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -18,10 +19,11 @@ import { NotificationModule } from '../notification/notification.module';
     }),
     HistoryActiveRequestModule,
     forwardRef(() => RevenueManagerModule),
-    NotificationModule
+    NotificationModule,
+    forwardRef(() => UsersModule),
   ],
   providers: [ActivityLogService, CloudService],
   controllers: [ActivityLogController],
   exports: [ActivityLogService],
 })
-export class ActivityLogModule {} 
+export class ActivityLogModule {}
