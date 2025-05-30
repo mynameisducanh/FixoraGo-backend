@@ -24,6 +24,7 @@ import {
 import { FilterActivityLogDto, TimeSort } from './dto/filter-activity-log.dto';
 import { plainToClass } from 'class-transformer';
 import { ActivityLogResponse } from './types/activity-log.types';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ActivityLogService {
@@ -35,6 +36,8 @@ export class ActivityLogService {
     @Inject(forwardRef(() => RevenueManagerService))
     private readonly revenueManagerService: RevenueManagerService,
     private readonly notificationService: NotificationService,
+     @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
@@ -102,12 +105,12 @@ export class ActivityLogService {
     }
     // Sort by time
     if (filter.sortTime === TimeSort.NEWEST) {
-      queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
-    } else if (filter.sortTime === TimeSort.NEAREST) {
-      queryBuilder.orderBy('requestServices.CreateAt', 'ASC');
+      queryBuilder.orderBy('activityLogs.CreateAt', 'DESC');
+    } else if (filter.sortTime === TimeSort.OLDEST) {
+      queryBuilder.orderBy('activityLogs.CreateAt', 'ASC');
     } else {
       // Default order
-      queryBuilder.orderBy('requestServices.CreateAt', 'DESC');
+      queryBuilder.orderBy('activityLogs.CreateAt', 'DESC');
     }
     queryBuilder.addSelect([
       'activityLogs.id AS id',
@@ -129,7 +132,21 @@ export class ActivityLogService {
     const items = plainToClass(ActivityLogResponse, result, {
       excludeExtraneousValues: true,
     });
-    return items;
+     const billsWithUserInfo = await Promise.all(
+      items.map(async (item) => {
+        const userInfo = await this.usersService.getUserByUserId2(item.userId);
+        return {
+          ...item,
+          user: {
+            fullName: `${userInfo.firstName} ${userInfo.lastName}`,
+            username: userInfo.username,
+            email: userInfo.email,
+            avatarUrl: userInfo.avatarUrl,
+          },
+        };
+      }),
+    );
+    return billsWithUserInfo;
   }
 
   async findOne(id: string): Promise<ActivityLogEntity> {
