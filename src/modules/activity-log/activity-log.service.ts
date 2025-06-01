@@ -36,7 +36,7 @@ export class ActivityLogService {
     @Inject(forwardRef(() => RevenueManagerService))
     private readonly revenueManagerService: RevenueManagerService,
     private readonly notificationService: NotificationService,
-     @Inject(forwardRef(() => UsersService))
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
   ) {}
 
@@ -63,6 +63,14 @@ export class ActivityLogService {
         requestServiceId: createActivityLogDto.requestServiceId,
         name: 'Nhân viên đã đánh dấu là đã tới',
         type: 'Thông báo từ nhân viên',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+    }
+    if (createActivityLogDto.activityType === 'user_report' || 'fixer_report') {
+      dataHistory = {
+        requestServiceId: createActivityLogDto.requestServiceId,
+        name: 'Chúng tôi đã nhận được báo cáo từ bạn.Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể',
+        type: 'Báo cáo người dùng thành công',
       };
       await this.historyActiveRequestService.create(dataHistory);
     }
@@ -132,7 +140,7 @@ export class ActivityLogService {
     const items = plainToClass(ActivityLogResponse, result, {
       excludeExtraneousValues: true,
     });
-     const billsWithUserInfo = await Promise.all(
+    const billsWithUserInfo = await Promise.all(
       items.map(async (item) => {
         const userInfo = await this.usersService.getUserByUserId2(item.userId);
         return {
@@ -232,6 +240,34 @@ export class ActivityLogService {
     });
   }
 
+  async findAllUserReport(userId?: string): Promise<ActivityLogEntity[]> {
+    const whereCondition: any = {
+      activityType: ActivityType.USER_REPORT,
+    };
+
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
+    return await this.activityLogRepository.find({
+      where: whereCondition,
+      order: { createAt: 'DESC' },
+    });
+  }
+  async findAllStaffReport(fixerId?: string): Promise<ActivityLogEntity[]> {
+    const whereCondition: any = {
+      activityType: ActivityType.STAFF_REPORT,
+    };
+
+    if (fixerId) {
+      whereCondition.fixerId = fixerId;
+    }
+
+    return await this.activityLogRepository.find({
+      where: whereCondition,
+      order: { createAt: 'DESC' },
+    });
+  }
   async updateTemp(id: string, temp: string): Promise<ActivityLogEntity> {
     const activityLog = await this.findOne(id);
     activityLog.temp = temp;
