@@ -66,6 +66,20 @@ export class ActivityLogController {
     return this.activityLogService.findAllStaffPayfee(userId);
   }
 
+  @Get('all/user-report/:userId')
+  findAllReportByUserId(
+    @Param('userId') userId: string,
+  ): Promise<ActivityLogEntity[]> {
+    return this.activityLogService.findAllUserReport(userId);
+  }
+
+  @Get('all/staff-report/:fixerId')
+  findAllReportByFixerId(
+    @Param('fixerId') fixerId: string,
+  ): Promise<ActivityLogEntity[]> {
+    return this.activityLogService.findAllStaffReport(fixerId);
+  }
+
   @Patch('update-temp/:id')
   updateTemp(
     @Param('id') id: string,
