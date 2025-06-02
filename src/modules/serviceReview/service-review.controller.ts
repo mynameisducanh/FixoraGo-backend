@@ -91,4 +91,14 @@ export class ServiceReviewController {
   ): Promise<{ hasReviewed: boolean; review?: ServiceReview }> {
     return await this.serviceReviewService.hasUserReviewed(requestServiceId, user.id);
   }
+
+  @Get('review/statistics')
+  @ApiOperation({ summary: 'Get review statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return review statistics including total reviews, reviews by type, and reviews by rating',
+  })
+  async getReviewStatistics() {
+    return await this.serviceReviewService.getReviewStatistics();
+  }
 }

@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Post,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -235,5 +236,23 @@ export class UserController {
       updateProfileDto,
       avatarFile,
     );
+  }
+
+  @Delete(':userId')
+  @JwtAuth()
+  @ApiOperation({ summary: 'Soft delete a user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User has been soft deleted successfully',
+    type: MessageResponse,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async softDeleteUser(
+    @Param('userId') userId: string,
+  ): Promise<MessageResponse> {
+    return await this.userService.softDeleteUser(userId);
   }
 }

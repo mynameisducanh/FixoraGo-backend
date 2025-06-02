@@ -151,4 +151,46 @@ export class ServiceReviewService {
       review: review || undefined
     };
   }
+
+  async getReviewStatistics(): Promise<{
+    totalReviews: number;
+    userReviewService: number;
+    userReviewFixer: number;
+    ratingStats: {
+      fiveStar: number;
+      fourStar: number;
+      threeStar: number;
+      twoStar: number;
+      oneStar: number;
+    };
+  }> {
+    const result = await this.serviceReviewRepository
+      .createQueryBuilder('review')
+      .select('COUNT(review.id)', 'totalReviews')
+      .addSelect('COUNT(CASE WHEN review.type = :userReviewService THEN 1 END)', 'userReviewService')
+      .addSelect('COUNT(CASE WHEN review.type = :userReviewFixer THEN 1 END)', 'userReviewFixer')
+      .addSelect('COUNT(CASE WHEN review.rating = 5 THEN 1 END)', 'fiveStar')
+      .addSelect('COUNT(CASE WHEN review.rating = 4 THEN 1 END)', 'fourStar')
+      .addSelect('COUNT(CASE WHEN review.rating = 3 THEN 1 END)', 'threeStar')
+      .addSelect('COUNT(CASE WHEN review.rating = 2 THEN 1 END)', 'twoStar')
+      .addSelect('COUNT(CASE WHEN review.rating = 1 THEN 1 END)', 'oneStar')
+      .setParameters({
+        userReviewService: 'userReviewService',
+        userReviewFixer: 'userReviewFixer'
+      })
+      .getRawOne();
+
+    return {
+      totalReviews: parseInt(result.totalReviews) || 0,
+      userReviewService: parseInt(result.userReviewService) || 0,
+      userReviewFixer: parseInt(result.userReviewFixer) || 0,
+      ratingStats: {
+        fiveStar: parseInt(result.fiveStar) || 0,
+        fourStar: parseInt(result.fourStar) || 0,
+        threeStar: parseInt(result.threeStar) || 0,
+        twoStar: parseInt(result.twoStar) || 0,
+        oneStar: parseInt(result.oneStar) || 0
+      }
+    };
+  }
 }

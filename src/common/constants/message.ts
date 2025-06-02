@@ -43,6 +43,10 @@ export const MESSAGE = {
   ACCOUNT_CHANGE_PASSWORD_FAILED: 'Đổi mật khẩu thất bại',
   ACCOUNT_LOCKED: 'Tài khoản đã bị khóa',
   ACCOUNT_INACTIVE: 'Tài khoản chưa xác thực',
+  ACCOUNT_BAD_REQUEST: 'Lỗi đăng nhập',
+  //google
+  GOOGLE_USER_FAILED: 'Lỗi truy xuất thông tin tài khoản Google',
+  GOOGLE_VERIFIED_FAILED: 'Không thể xác nhận tài khoản Google',
 
   // Token
   INVALID_OR_EXPIRED_TOKEN: 'Token không hợp lệ hoặc đã hết hạn',
@@ -195,5 +199,53 @@ export const CONFIRM_REGISTER_BY_ADMIN = (
   `,
   };
 
+  return { titles: titles[language] || '', content: content[language] || '' };
+};
+
+export const CONFIRM_REGISTER_GOOGLE = (
+  language: string,
+  email: string,
+  fullName: string,
+) => {
+  const titles: Record<string, string> = {
+    vi: 'Thông tin tài khoản inWEB',
+    en: 'InWEB account information',
+    ja: 'InWEBアカウント情報',
+  };
+  const content: Record<string, string> = {
+    vi: `
+    Xin chào ${fullName},<br><br>
+    Chào mừng bạn đến với inWEB.<br><br>
+    Chúng tôi xin thông báo rằng quá trình đăng ký tài khoản của bạn đã hoàn tất thành công! Bây giờ bạn đã trở thành một phần trong ứng dụng của chúng tôi và có thể trải nghiệm toàn bộ các tính năng và dịch vụ mà chúng tôi cung cấp.<br><br>
+    Bạn có thể sử dụng tài khoản của mình để truy cập vào ứng dụng của chúng tôi và khám phá những tính năng hữu ích mà chúng tôi đã dành cho bạn.<br><br> 
+    Thông tin chi tiết về tài khoản Google của bạn đã được chúng tôi ghi nhận như sau: <br><br>
+    Email: ${email}<br>
+    Tên: ${fullName}<br><br>
+    Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ nào, đừng ngần ngại liên hệ với chúng tôi bất cứ lúc nào. Chúng tôi luôn sẵn lòng để hỗ trợ bạn.<br><br>
+    ${MAIL_FOOTER(language)}
+    `,
+    en: `
+    Hello ${fullName},<br><br>
+    Welcome to inWEB.<br><br>
+    We are pleased to inform you that your account registration process has been successfully completed! You are now part of our application and can experience all the features and services we provide.<br><br>
+    You can use your account to access our application and explore the useful features we have prepared for you.<br><br>
+    Details of your Google account have been recorded by us as follows: <br><br>
+    Email: ${email}<br>
+    Name: ${fullName}<br><br>
+    If you have any questions or need any support, please do not hesitate to contact us at any time. We are always ready to support you.<br><br>
+    ${MAIL_FOOTER(language)}
+    `,
+    ja: `
+    こんにちは ${fullName},<br><br>
+    inWEBへようこそ。<br><br>
+    お知らせいたします。アカウント登録プロセスが正常に完了しました！ これで、アプリケーションの一部となり、提供しているすべての機能とサービスを体験できます。<br><br>
+    あなたのアカウントを使用して、アプリケーションにアクセスし、用意された便利な機能をご利用いただけます。<br><br>
+    あなたのGoogleアカウントの詳細は次のとおりです： <br><br>
+    Email: ${email}<br>
+    名前: ${fullName}<br><br>
+    ご質問やサポートが必要な場合は、いつでもお問い合わせください。 いつでもお手伝いさせていただきます。<br><br>
+    ${MAIL_FOOTER(language)}
+    `,
+  };
   return { titles: titles[language] || '', content: content[language] || '' };
 };
