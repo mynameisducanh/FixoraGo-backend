@@ -54,11 +54,21 @@ export class ActivityLogController {
     return this.activityLogService.findByRequestServiceId(requestServiceId);
   }
 
+  @Get('request-service/:requestServiceId/staff-checkin')
+  findByRequestServiceIdAndStaffCheckin(
+    @Param('requestServiceId') requestServiceId: string,
+  ): Promise<ActivityLogEntity> {
+    return this.activityLogService.findByRequestServiceIdAndStaffCheckin(requestServiceId);
+  }
+
   @Get('check-fixer-checkin/:requestServiceId')
   checkFixerCheckin(@Param('requestServiceId') requestServiceId: string) {
     return this.activityLogService.checkFixerCheckin(requestServiceId);
   }
-
+  @Get('check-user-confirm-checkin/:requestServiceId')
+  checkUserConfirmCheckin(@Param('requestServiceId') requestServiceId: string) {
+    return this.activityLogService.checkUserConfirmCheckin(requestServiceId);
+  }
   @Get('all/staff-payfee/:userId')
   findAllStaffPayfee(
     @Param('userId') userId: string,
@@ -86,6 +96,14 @@ export class ActivityLogController {
     @Body('temp') temp: string,
   ): Promise<ActivityLogEntity> {
     return this.activityLogService.updateTemp(id, temp);
+  }
+
+  @Patch('update-temp-timestamp/:id')
+  updateTempAndTimestamp(
+    @Param('id') id: string,
+    @Body('temp') temp: string,
+  ): Promise<ActivityLogEntity> {
+    return this.activityLogService.updateTempAndTimestamp(id, temp);
   }
 
   @Patch(':id')

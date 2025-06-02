@@ -61,12 +61,15 @@ export class ActivityLogService {
     if (createActivityLogDto.activityType === 'staff_checkin') {
       dataHistory = {
         requestServiceId: createActivityLogDto.requestServiceId,
-        name: 'Nhân viên đã đánh dấu là đã tới',
+        name: 'Nhân viên đã đánh dấu là đã tới , đang chờ xác nhận từ khách hàng',
         type: 'Thông báo từ nhân viên',
       };
       await this.historyActiveRequestService.create(dataHistory);
     }
-    if (createActivityLogDto.activityType === 'user_report' || 'fixer_report') {
+    if (
+      createActivityLogDto.activityType === 'user_report' ||
+      createActivityLogDto.activityType === 'fixer_report'
+    ) {
       dataHistory = {
         requestServiceId: createActivityLogDto.requestServiceId,
         name: 'Chúng tôi đã nhận được báo cáo từ bạn.Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể',
@@ -224,7 +227,27 @@ export class ActivityLogService {
       hasCheckin: false,
     };
   }
+  async checkUserConfirmCheckin(
+    requestServiceId: string,
+  ): Promise<{ hasCheckin: boolean; userId?: string }> {
+    const activityLog = await this.activityLogRepository.findOne({
+      where: {
+        requestServiceId,
+        activityType: ActivityType.STAFF_CHECKIN,
+      },
+      order: { createAt: 'DESC' },
+    });
+    if (activityLog && activityLog.fixerId && activityLog.temp === "user_confirmed") {
+      return {
+        hasCheckin: true,
+        userId: activityLog.userId,
+      };
+    }
 
+    return {
+      hasCheckin: false,
+    };
+  }
   async findAllStaffPayfee(userId?: string): Promise<ActivityLogEntity[]> {
     const whereCondition: any = {
       activityType: ActivityType.STAFF_PAYFEE,
@@ -272,6 +295,34 @@ export class ActivityLogService {
     const activityLog = await this.findOne(id);
     activityLog.temp = temp;
     activityLog.updateAt = new Date().getTime();
+    return await this.activityLogRepository.save(activityLog);
+  }
+
+  async findByRequestServiceIdAndStaffCheckin(
+    requestServiceId: string,
+  ): Promise<ActivityLogEntity> {
+    return await this.activityLogRepository.findOne({
+      where: {
+        requestServiceId,
+        activityType: ActivityType.STAFF_CHECKIN,
+      },
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async updateTempAndTimestamp(
+    id: string,
+    temp: string,
+  ): Promise<ActivityLogEntity> {
+    const activityLog = await this.findOne(id);
+    activityLog.temp = temp;
+    activityLog.updateAt = new Date().getTime();
+    const dataHistory = {
+      requestServiceId: activityLog.requestServiceId,
+      name: 'Khách hàng đã xác nhận là nhân viên đã tới',
+      type: 'Thông báo từ khách hàng',
+    };
+    await this.historyActiveRequestService.create(dataHistory);
     return await this.activityLogRepository.save(activityLog);
   }
 }

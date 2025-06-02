@@ -466,4 +466,22 @@ export class UsersService {
     }
     return await this.userRes.save(newUser);
   }
+
+  async softDeleteUser(userId: string): Promise<MessageResponse> {
+    const user = await this.getOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Update deleteAt timestamp
+    await this.userRes.update(userId, {
+      deleteAt: new Date().getTime(),
+      updateAt: new Date().getTime()
+    });
+
+    return {
+      message: 'User deleted successfully',
+      statusCode: HttpStatus.OK
+    };
+  }
 }
