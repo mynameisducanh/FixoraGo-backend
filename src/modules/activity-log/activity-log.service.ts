@@ -109,6 +109,16 @@ export class ActivityLogService {
     const queryBuilder =
       this.activityLogRepository.createQueryBuilder('activityLogs');
 
+    if (filter.type === 'report') {
+      queryBuilder.where('activityLogs.activityType IN (:...reportTypes)', {
+        reportTypes: ['user_report', 'fixer_report'],
+      });
+    }
+
+    queryBuilder.andWhere('activityLogs.activityType != :excludeType', {
+      excludeType: 'staff_payfee',
+    });
+
     if (filter.activityType) {
       queryBuilder.where('activityLogs.activityType = :activityType', {
         activityType: filter.activityType,
@@ -145,15 +155,34 @@ export class ActivityLogService {
     });
     const billsWithUserInfo = await Promise.all(
       items.map(async (item) => {
-        const userInfo = await this.usersService.getUserByUserId2(item.userId);
+        let userInfo = null;
+        let fixerInfo = null;
+
+        if (item.userId) {
+          userInfo = await this.usersService.getUserByUserId2(item.userId);
+        }
+        if (item.fixerId) {
+          fixerInfo = await this.usersService.getUserByUserId2(item.fixerId);
+        }
+
         return {
           ...item,
-          user: {
-            fullName: `${userInfo.firstName} ${userInfo.lastName}`,
-            username: userInfo.username,
-            email: userInfo.email,
-            avatarUrl: userInfo.avatarUrl,
-          },
+          user: userInfo
+            ? {
+                fullName: `${userInfo.firstName} ${userInfo.lastName}`,
+                username: userInfo.username,
+                email: userInfo.email,
+                avatarUrl: userInfo.avatarUrl,
+              }
+            : null,
+          fixer: fixerInfo
+            ? {
+                fullName: `${fixerInfo.firstName} ${fixerInfo.lastName}`,
+                username: fixerInfo.username,
+                email: fixerInfo.email,
+                avatarUrl: fixerInfo.avatarUrl,
+              }
+            : null,
         };
       }),
     );
@@ -237,7 +266,11 @@ export class ActivityLogService {
       },
       order: { createAt: 'DESC' },
     });
-    if (activityLog && activityLog.fixerId && activityLog.temp === "user_confirmed") {
+    if (
+      activityLog &&
+      activityLog.fixerId &&
+      activityLog.temp === 'user_confirmed'
+    ) {
       return {
         hasCheckin: true,
         userId: activityLog.userId,
