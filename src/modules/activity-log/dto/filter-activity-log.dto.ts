@@ -10,6 +10,10 @@ export enum TimeSort {
 export class FilterActivityLogDto {
   @IsString()
   @IsOptional()
+  type: string;
+
+  @IsString()
+  @IsOptional()
   activityType: string;
 
   @IsOptional()
