@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivityLogEntity } from '../../database/entities/activity-log.entity';
 import { ActivityLogService } from './activity-log.service';
@@ -9,6 +9,7 @@ import multer from 'multer';
 import { HistoryActiveRequestModule } from '../historyActiveRequest/historyActiveRequest.module';
 import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module';
 import { NotificationModule } from '../notification/notification.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -17,11 +18,12 @@ import { NotificationModule } from '../notification/notification.module';
       storage: multer.memoryStorage(),
     }),
     HistoryActiveRequestModule,
-    RevenueManagerModule,
-    NotificationModule
+    forwardRef(() => RevenueManagerModule),
+    NotificationModule,
+    forwardRef(() => UsersModule),
   ],
   providers: [ActivityLogService, CloudService],
   controllers: [ActivityLogController],
   exports: [ActivityLogService],
 })
-export class ActivityLogModule {} 
+export class ActivityLogModule {}

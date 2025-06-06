@@ -5,6 +5,9 @@ export enum ActivityType {
   STAFF_CHECKIN = 'staff_checkin',
   STAFF_CANCEL = 'staff_cancel',
   USER_CANCEL = 'user_cancel',
+  STAFF_PAYFEE = 'staff_payfee',
+  USER_REPORT = 'user_report',
+  STAFF_REPORT = 'staff_report',
 }
 
 @Entity('activityLogs')

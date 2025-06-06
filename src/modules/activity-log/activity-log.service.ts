@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -16,6 +21,10 @@ import {
   NotificationPriority,
   NotificationType,
 } from 'src/database/entities/notification.entity';
+import { FilterActivityLogDto, TimeSort } from './dto/filter-activity-log.dto';
+import { plainToClass } from 'class-transformer';
+import { ActivityLogResponse } from './types/activity-log.types';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ActivityLogService {
@@ -24,8 +33,11 @@ export class ActivityLogService {
     private activityLogRepository: Repository<ActivityLogEntity>,
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
+    @Inject(forwardRef(() => RevenueManagerService))
     private readonly revenueManagerService: RevenueManagerService,
     private readonly notificationService: NotificationService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
@@ -41,14 +53,27 @@ export class ActivityLogService {
       id: id,
       ...createActivityLogDto,
       imageUrl: imageUrl || createActivityLogDto.imageUrl,
+      createAt: new Date().getTime(),
+      updateAt: new Date().getTime(),
     });
     let dataHistory;
 
     if (createActivityLogDto.activityType === 'staff_checkin') {
       dataHistory = {
         requestServiceId: createActivityLogDto.requestServiceId,
-        name: 'Nhân viên đã đánh dấu là đã tới',
+        name: 'Nhân viên đã đánh dấu là đã tới , đang chờ xác nhận từ khách hàng',
         type: 'Thông báo từ nhân viên',
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+    }
+    if (
+      createActivityLogDto.activityType === 'user_report' ||
+      createActivityLogDto.activityType === 'fixer_report'
+    ) {
+      dataHistory = {
+        requestServiceId: createActivityLogDto.requestServiceId,
+        name: 'Chúng tôi đã nhận được báo cáo từ bạn.Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể',
+        type: 'Báo cáo người dùng thành công',
       };
       await this.historyActiveRequestService.create(dataHistory);
     }
@@ -76,6 +101,92 @@ export class ActivityLogService {
 
   async findAll(): Promise<ActivityLogEntity[]> {
     return await this.activityLogRepository.find();
+  }
+
+  async getAllByFilter(
+    filter: FilterActivityLogDto,
+  ): Promise<ActivityLogEntity[]> {
+    const queryBuilder =
+      this.activityLogRepository.createQueryBuilder('activityLogs');
+
+    if (filter.type === 'report') {
+      queryBuilder.where('activityLogs.activityType IN (:...reportTypes)', {
+        reportTypes: ['user_report', 'fixer_report'],
+      });
+    }
+
+    queryBuilder.andWhere('activityLogs.activityType != :excludeType', {
+      excludeType: 'staff_payfee',
+    });
+
+    if (filter.activityType) {
+      queryBuilder.where('activityLogs.activityType = :activityType', {
+        activityType: filter.activityType,
+      });
+    }
+    // Sort by time
+    if (filter.sortTime === TimeSort.NEWEST) {
+      queryBuilder.orderBy('activityLogs.CreateAt', 'DESC');
+    } else if (filter.sortTime === TimeSort.OLDEST) {
+      queryBuilder.orderBy('activityLogs.CreateAt', 'ASC');
+    } else {
+      // Default order
+      queryBuilder.orderBy('activityLogs.CreateAt', 'DESC');
+    }
+    queryBuilder.addSelect([
+      'activityLogs.id AS id',
+      'activityLogs.activityType AS activitytype',
+      'activityLogs.fixerId AS fixerid',
+      'activityLogs.userId AS userid',
+      'activityLogs.requestServiceId AS requestserviceid',
+      'activityLogs.requestConfirmId AS requestconfirmid',
+      'activityLogs.note AS note',
+      'activityLogs.imageUrl AS imageurl',
+      'activityLogs.address AS address',
+      'activityLogs.note AS note',
+      'activityLogs.temp AS temp',
+      'activityLogs.DeleteAt AS deleteAt',
+      'activityLogs.CreateAt AS createAt',
+      'activityLogs.temp AS temp',
+    ]);
+    const result = await queryBuilder.getRawMany();
+    const items = plainToClass(ActivityLogResponse, result, {
+      excludeExtraneousValues: true,
+    });
+    const billsWithUserInfo = await Promise.all(
+      items.map(async (item) => {
+        let userInfo = null;
+        let fixerInfo = null;
+
+        if (item.userId) {
+          userInfo = await this.usersService.getUserByUserId2(item.userId);
+        }
+        if (item.fixerId) {
+          fixerInfo = await this.usersService.getUserByUserId2(item.fixerId);
+        }
+
+        return {
+          ...item,
+          user: userInfo
+            ? {
+                fullName: `${userInfo.firstName} ${userInfo.lastName}`,
+                username: userInfo.username,
+                email: userInfo.email,
+                avatarUrl: userInfo.avatarUrl,
+              }
+            : null,
+          fixer: fixerInfo
+            ? {
+                fullName: `${fixerInfo.firstName} ${fixerInfo.lastName}`,
+                username: fixerInfo.username,
+                email: fixerInfo.email,
+                avatarUrl: fixerInfo.avatarUrl,
+              }
+            : null,
+        };
+      }),
+    );
+    return billsWithUserInfo;
   }
 
   async findOne(id: string): Promise<ActivityLogEntity> {
@@ -144,5 +255,107 @@ export class ActivityLogService {
     return {
       hasCheckin: false,
     };
+  }
+  async checkUserConfirmCheckin(
+    requestServiceId: string,
+  ): Promise<{ hasCheckin: boolean; userId?: string }> {
+    const activityLog = await this.activityLogRepository.findOne({
+      where: {
+        requestServiceId,
+        activityType: ActivityType.STAFF_CHECKIN,
+      },
+      order: { createAt: 'DESC' },
+    });
+    if (
+      activityLog &&
+      activityLog.fixerId &&
+      activityLog.temp === 'user_confirmed'
+    ) {
+      return {
+        hasCheckin: true,
+        userId: activityLog.userId,
+      };
+    }
+
+    return {
+      hasCheckin: false,
+    };
+  }
+  async findAllStaffPayfee(userId?: string): Promise<ActivityLogEntity[]> {
+    const whereCondition: any = {
+      activityType: ActivityType.STAFF_PAYFEE,
+    };
+
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
+    return await this.activityLogRepository.find({
+      where: whereCondition,
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async findAllUserReport(userId?: string): Promise<ActivityLogEntity[]> {
+    const whereCondition: any = {
+      activityType: ActivityType.USER_REPORT,
+    };
+
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
+    return await this.activityLogRepository.find({
+      where: whereCondition,
+      order: { createAt: 'DESC' },
+    });
+  }
+  async findAllStaffReport(fixerId?: string): Promise<ActivityLogEntity[]> {
+    const whereCondition: any = {
+      activityType: ActivityType.STAFF_REPORT,
+    };
+
+    if (fixerId) {
+      whereCondition.fixerId = fixerId;
+    }
+
+    return await this.activityLogRepository.find({
+      where: whereCondition,
+      order: { createAt: 'DESC' },
+    });
+  }
+  async updateTemp(id: string, temp: string): Promise<ActivityLogEntity> {
+    const activityLog = await this.findOne(id);
+    activityLog.temp = temp;
+    activityLog.updateAt = new Date().getTime();
+    return await this.activityLogRepository.save(activityLog);
+  }
+
+  async findByRequestServiceIdAndStaffCheckin(
+    requestServiceId: string,
+  ): Promise<ActivityLogEntity> {
+    return await this.activityLogRepository.findOne({
+      where: {
+        requestServiceId,
+        activityType: ActivityType.STAFF_CHECKIN,
+      },
+      order: { createAt: 'DESC' },
+    });
+  }
+
+  async updateTempAndTimestamp(
+    id: string,
+    temp: string,
+  ): Promise<ActivityLogEntity> {
+    const activityLog = await this.findOne(id);
+    activityLog.temp = temp;
+    activityLog.updateAt = new Date().getTime();
+    const dataHistory = {
+      requestServiceId: activityLog.requestServiceId,
+      name: 'Khách hàng đã xác nhận là nhân viên đã tới',
+      type: 'Thông báo từ khách hàng',
+    };
+    await this.historyActiveRequestService.create(dataHistory);
+    return await this.activityLogRepository.save(activityLog);
   }
 }
