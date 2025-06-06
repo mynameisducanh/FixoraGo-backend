@@ -291,6 +291,7 @@ export class RequestConfirmServiceService {
             await this.requestServiceRes.save(requestService);
           }
         }
+        console.log("2",service)
         const createData = {
           userId: service.userId,
           totalRevenue: Number(service.price),
@@ -511,6 +512,20 @@ export class RequestConfirmServiceService {
     return {
       totalYearlyRevenue,
       monthlyRevenue,
+    };
+  }
+
+  async checkTotalTypeByRequestServiceId(requestServiceId: string): Promise<{ hasTotalType: boolean; isAccepted: boolean }> {
+    const service = await this.requestConfirmServiceRes.findOne({
+      where: {
+        requestServiceId: requestServiceId,
+        type: ServiceType.TOTAL
+      }
+    });
+
+    return {
+      hasTotalType: !!service,
+      isAccepted: service?.userAccept === 'Accepted'
     };
   }
 }

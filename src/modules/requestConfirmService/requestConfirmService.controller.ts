@@ -107,4 +107,9 @@ export class RequestConfirmServiceController {
   async getYearlyRevenue() {
     return await this.requestConfirmServiceService.getYearlyRevenue();
   }
+
+  @Get('propose/check/:requestServiceId')
+  async getPropose(@Param('requestServiceId') requestServiceId: string) {
+    return await this.requestConfirmServiceService.checkTotalTypeByRequestServiceId(requestServiceId);
+  }
 }
