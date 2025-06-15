@@ -38,7 +38,8 @@ export class RequestConfirmServiceService {
     body: CreateRequestConfirmServiceDto,
     file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
-    let imageUrl = '';
+    try {
+      let imageUrl = '';
     if (file) {
       imageUrl = await this.cloudService.uploadFileToCloud(file);
     }
@@ -81,6 +82,9 @@ export class RequestConfirmServiceService {
       statusCode: HttpStatus.OK,
       id: savedService.id,
     };
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   async getOneById(id: string): Promise<RequestConfirmServiceResponse> {
@@ -348,6 +352,29 @@ export class RequestConfirmServiceService {
       hasCompleted: false,
     };
   }
+
+  async checkFixerPropose(
+    id: string,
+  ): Promise<{ hasCompleted: boolean; fixerId?: string }> {
+    const activityLog = await this.requestConfirmServiceRes.findOne({
+      where: {
+        requestServiceId: id,
+        type: ServiceType.TOTAL,
+      },
+      order: { createAt: 'DESC' },
+    });
+    if (activityLog && activityLog.userId) {
+      return {
+        hasCompleted: true,
+        fixerId: activityLog.userId,
+      };
+    }
+
+    return {
+      hasCompleted: false,
+    };
+  }
+
 
   // Revenue statistics methods
   async getUserRevenueStatistics(userId: string) {

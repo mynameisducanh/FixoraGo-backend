@@ -13,9 +13,10 @@ import { RevenueManagerService } from './revenue-manager.service';
 import { CreateRevenueManagerDto } from './dto/create-revenue-manager.dto';
 import { UpdateRevenueManagerDto } from './dto/update-revenue-manager.dto';
 import { RevenueManagerEntity } from 'src/database/entities/revenue-manager.entity';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('revenue-manager')
+@ApiTags('Revenue Manager')
 export class RevenueManagerController {
   constructor(private readonly revenueManagerService: RevenueManagerService) {}
 

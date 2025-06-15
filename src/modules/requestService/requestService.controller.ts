@@ -23,13 +23,14 @@ import {
   FileInterceptor,
   FilesInterceptor,
 } from '@nestjs/platform-express/multer';
-import { ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 import { FilterRequestServiceDto } from './dto/filter-request-service.dto';
 import { FixerApprovalDto } from './dto/fixer-approval.dto';
 import { UpdateRequestServiceDto } from './dto/update-request-service.dto';
 
 @Controller('requestService')
+@ApiTags('Request Service')
 export class RequestServiceController {
   constructor(private readonly requestServiceService: RequestServiceService) {}
 
