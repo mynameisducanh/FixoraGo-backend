@@ -103,8 +103,7 @@ export class RequestServiceService {
         this.requestServiceRes.createQueryBuilder('requestServices');
 
       const data = queryResult
-        .orderBy('requestServices.UpdateAt', 'ASC')
-        .addOrderBy('requestServices.CreateAt', 'ASC')
+        .orderBy('requestServices.CreateAt', 'ASC')
         .addSelect([
           'requestServices.id AS id',
           'requestServices.userId AS userid',
@@ -200,8 +199,8 @@ export class RequestServiceService {
       });
 
       const data = queryResult
-        .orderBy('requestServices.UpdateAt', 'ASC')
-        .addOrderBy('requestServices.CreateAt', 'ASC')
+        .orderBy('requestServices.UpdateAt', 'DESC')
+        .addOrderBy('requestServices.CreateAt', 'DESC')
         .addSelect([
           'requestServices.id AS id',
           'requestServices.userId AS userid',

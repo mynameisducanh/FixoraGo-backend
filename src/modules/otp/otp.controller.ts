@@ -1,8 +1,10 @@
 import { Controller, Post, Body, Get, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { ValidOtp } from 'src/modules/otp/dto/valid-otp.dto';
 import { OtpService } from 'src/modules/otp/otp.service';
 
 @Controller('otp')
+@ApiTags('OTP')
 export class OtpController {
   constructor(private readonly otpService: OtpService) {}
 

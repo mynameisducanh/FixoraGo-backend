@@ -16,8 +16,10 @@ import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
 import { ActivityLogEntity } from '../../database/entities/activity-log.entity';
 import { FilterActivityLogDto } from './dto/filter-activity-log.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('activity-logs')
+@ApiTags('Activity Logs')
 export class ActivityLogController {
   constructor(private readonly activityLogService: ActivityLogService) {}
 
