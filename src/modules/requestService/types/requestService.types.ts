@@ -1,5 +1,16 @@
 import { Expose, Transform } from 'class-transformer';
 
+export class UserInfo {
+  @Expose()
+  username: string;
+
+  @Expose()
+  fullName: string;
+
+  @Expose()
+  avatarUrl: string;
+}
+
 export class RequestServiceResponse {
   @Expose()
   id: string;
@@ -57,4 +68,10 @@ export class RequestServiceResponse {
 
   @Expose()
   temp: string;
+
+  @Expose()
+  user?: UserInfo;
+
+  @Expose()
+  fixer?: UserInfo;
 }

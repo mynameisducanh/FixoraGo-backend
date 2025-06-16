@@ -83,7 +83,7 @@ export class RequestServiceService {
       name: 'Yêu cầu đã được gửi vui lòng chờ phản hồi từ nhân viên',
       type: 'Yêu cầu dịch vụ đã được tạo',
     };
-     await this.notificationService.create({
+    await this.notificationService.create({
       type: NotificationType.SYSTEM,
       priority: NotificationPriority.MEDIUM,
       title: 'Tạo yêu cầu thành công',
@@ -132,13 +132,46 @@ export class RequestServiceService {
         excludeExtraneousValues: true,
       });
 
+      // Get user information for each request
+      const itemsWithUserInfo = await Promise.all(
+        items.map(async (item) => {
+          if (item.userId) {
+            try {
+              const userInfo = await this.userService.getUserNameById(
+                item.userId,
+              );
+              let fixerInfo;
+              if (item.fixerId) {
+                fixerInfo = await this.userService.getUserNameById(
+                  item.fixerId,
+                );
+              }
+              return {
+                ...item,
+                user: userInfo,
+                fixer: fixerInfo,
+              };
+            } catch (error) {
+              console.error(
+                `Error getting user info for ID ${item.userId}:`,
+                error,
+              );
+              return item;
+            }
+          }
+          return item;
+        }),
+      );
+
       // Check guarantee status and expired requests
       const services = await this.requestServiceRes.find();
       await this.checkAndUpdateGuaranteeStatusForList(services);
       await this.checkAndUpdateExpiredRequests(services);
 
-      return items;
-    } catch (error) {}
+      return itemsWithUserInfo;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAllByUserId(id: string): Promise<RequestServiceResponse[]> {
@@ -776,7 +809,10 @@ export class RequestServiceService {
       service.guaranteeTime &&
       parseInt(service.guaranteeTime) < new Date().getTime()
     ) {
-      await this.updateRequestServiceStatus(service.id, ServiceStatus.COMPLETED);
+      await this.updateRequestServiceStatus(
+        service.id,
+        ServiceStatus.COMPLETED,
+      );
       service.status = ServiceStatus.COMPLETED;
 
       // Tạo lịch sử khi thời gian bảo hành hết hạn
