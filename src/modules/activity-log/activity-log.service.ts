@@ -25,6 +25,7 @@ import { FilterActivityLogDto, TimeSort } from './dto/filter-activity-log.dto';
 import { plainToClass } from 'class-transformer';
 import { ActivityLogResponse } from './types/activity-log.types';
 import { UsersService } from '../users/users.service';
+import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 
 @Injectable()
 export class ActivityLogService {
@@ -38,12 +39,15 @@ export class ActivityLogService {
     private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
+    @Inject(forwardRef(() => RequestServiceService))
+    private readonly requestServiceService: RequestServiceService,
   ) {}
 
   async create(
     createActivityLogDto: CreateActivityLogDto,
     file?: Express.Multer.File,
   ): Promise<ActivityLogEntity> {
+    try {
     let imageUrl = '';
     if (file) {
       imageUrl = await this.cloudService.uploadFileToCloud(file);
@@ -57,12 +61,31 @@ export class ActivityLogService {
       updateAt: new Date().getTime(),
     });
     let dataHistory;
-
+    const requestService = await this.requestServiceService.getOneById(
+      createActivityLogDto.requestServiceId,
+    );
+    if (createActivityLogDto.activityType === 'staff_going') {
+      dataHistory = {
+        requestServiceId: createActivityLogDto.requestServiceId,
+        name: 'Nhân viên đã đánh dấu là đang tới!',
+        type: `Thông báo từ nhân viên`,
+      };
+      await this.historyActiveRequestService.create(dataHistory);
+      await this.notificationService.create({
+        type: NotificationType.FIXER_SERVICE,
+        priority: NotificationPriority.MEDIUM,
+        title: `Thông báo của yêu cầu ${requestService.id.slice(0, 13)}`,
+        content: `Nhân viên đã đánh dấu là đang tới, hãy để ý điện thoại của bạn`,
+        userId: requestService.userId,
+        actionUrl: `/requestService/detail`,
+        metadata: `${requestService.id}`,
+      });
+    }
     if (createActivityLogDto.activityType === 'staff_checkin') {
       dataHistory = {
         requestServiceId: createActivityLogDto.requestServiceId,
-        name: 'Nhân viên đã đánh dấu là đã tới , đang chờ xác nhận từ khách hàng',
-        type: 'Thông báo từ nhân viên',
+        name: 'Nhân viên đã đánh dấu là đã tới',
+        type: `Thông báo từ nhân viên`,
       };
       await this.historyActiveRequestService.create(dataHistory);
     }
@@ -76,6 +99,28 @@ export class ActivityLogService {
         type: 'Báo cáo người dùng thành công',
       };
       await this.historyActiveRequestService.create(dataHistory);
+    }
+    if (createActivityLogDto.activityType === 'user_reject') {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: `Người dùng đã hủy yêu cầu ${requestService.id.slice(0, 13)}`,
+        content: `Người dùng vừa hủy yêu cầu với nội dung ${createActivityLogDto.note}`,
+        userId: requestService.fixerId,
+        actionUrl: `/requestService/detail`,
+        metadata: `${requestService.id}`,
+      });
+    }
+    if (createActivityLogDto.activityType === 'fixer_reject') {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: `Nhân viên đã hủy yêu cầu ${requestService.id.slice(0, 13)}`,
+        content: `Nhân viên vừa hủy yêu cầu với nội dung ${createActivityLogDto.note}`,
+        userId: requestService.userId,
+        actionUrl: `/requestService/detail`,
+        metadata: `${requestService.id}`,
+      });
     }
     if (createActivityLogDto.activityType === 'staff_payfee') {
       const dataRevenue = {
@@ -97,6 +142,9 @@ export class ActivityLogService {
       });
     }
     return await this.activityLogRepository.save(activityLog);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async findAll(): Promise<ActivityLogEntity[]> {
@@ -357,5 +405,28 @@ export class ActivityLogService {
     };
     await this.historyActiveRequestService.create(dataHistory);
     return await this.activityLogRepository.save(activityLog);
+  }
+
+  async checkStaffGoing(
+    requestServiceId: string,
+  ): Promise<{ hasStaffGoing: boolean; note?: string }> {
+    const activityLog = await this.activityLogRepository.findOne({
+      where: {
+        requestServiceId,
+        activityType: 'staff_going',
+      },
+      order: { createAt: 'DESC' },
+    });
+
+    if (activityLog) {
+      return {
+        hasStaffGoing: true,
+        note: activityLog.note,
+      };
+    }
+
+    return {
+      hasStaffGoing: false,
+    };
   }
 }

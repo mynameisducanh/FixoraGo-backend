@@ -41,10 +41,12 @@ export class UserResponse {
   address: string;
   @Expose()
   phonenumber: string;
-
+  @Expose({name :'currentlocation'})
+  currentLocation: string;
   @Expose()
   authdata: string;
-
+  @Expose({name :'lastcheckin'})
+  lastCheckIn: number;
   @Expose()
   gioitinh: string;
 
