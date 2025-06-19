@@ -146,7 +146,6 @@ export class RevenueManagerService {
     amount: number,
   ): Promise<RevenueManagerEntity> {
     const revenueManager = await this.findByTemp(temp);
-    console.log(revenueManager);
     revenueManager.totalRevenue = Number(revenueManager.totalRevenue) + amount;
     return await this.revenueManagerRepository.save(revenueManager);
   }

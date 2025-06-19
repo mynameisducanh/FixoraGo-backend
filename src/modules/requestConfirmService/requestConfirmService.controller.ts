@@ -33,7 +33,6 @@ export class RequestConfirmServiceController {
     @Body() body: CreateRequestConfirmServiceDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<MessageResponse & { id?: string }> {
-    console.log(body, file);
     return await this.requestConfirmServiceService.createRequestConfirmService(
       body,
       file,

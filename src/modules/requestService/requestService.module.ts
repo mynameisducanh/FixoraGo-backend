@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express/multer';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -13,6 +13,8 @@ import { RequestServiceController } from 'src/modules/requestService/requestServ
 import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 import { ChatModule } from '../chat/chat.module';
 import { NotificationModule } from 'src/modules/notification/notification.module';
+import { ChatGateway } from 'src/modules/chat/chat.gateway';
+import { UsersModule } from 'src/modules/users/users.module';
 
 @Global()
 @Module({
@@ -24,9 +26,10 @@ import { NotificationModule } from 'src/modules/notification/notification.module
     }),
     HistoryActiveRequestModule,
     ChatModule,
-    NotificationModule
+    NotificationModule,
+    forwardRef(() => UsersModule),
   ],
-  providers: [RequestServiceService, CloudService],
+  providers: [RequestServiceService, CloudService, ChatGateway],
   controllers: [RequestServiceController],
   exports: [RequestServiceService],
 })

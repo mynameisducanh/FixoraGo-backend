@@ -15,6 +15,10 @@ import { HistoryActiveRequestService } from 'src/modules/historyActiveRequest/hi
 import { RequestServiceEntity } from 'src/database/entities/request-service.entity';
 import { ServiceStatus } from 'src/database/entities/request-service.entity';
 import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
+import { UsersService } from 'src/modules/users/users.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
+import { NotificationPriority, NotificationType } from 'src/database/entities/notification.entity';
+import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 
 @Injectable()
 export class RequestConfirmServiceService {
@@ -26,6 +30,9 @@ export class RequestConfirmServiceService {
     private readonly cloudService: CloudService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
     private readonly revenueManagerService: RevenueManagerService,
+    private readonly userService: UsersService,
+    private readonly notificationService: NotificationService,
+    private readonly requestServiceService: RequestServiceService,
   ) {}
 
   async save(
@@ -252,6 +259,7 @@ export class RequestConfirmServiceService {
         );
       }
       let dataHistory;
+      const res = await this.requestServiceService.getOneById(service.requestServiceId);
       if (service.type === 'repair') {
         dataHistory = {
           requestServiceId: service.requestServiceId,
@@ -275,7 +283,9 @@ export class RequestConfirmServiceService {
           type: 'Khách hàng đã xác nhận',
         };
         await this.historyActiveRequestService.create(dataHistory);
-
+        const temp = await this.userService.findById(service.userId);
+        temp.lastCheckIn = (temp.lastCheckIn || 0) + 1;
+        await this.userService.save(temp);
         if (service.temp) {
           const warrantyDays = parseInt(service.temp);
           const currentTime = new Date().getTime();
@@ -295,7 +305,24 @@ export class RequestConfirmServiceService {
             await this.requestServiceRes.save(requestService);
           }
         }
-        console.log("2",service)
+        await this.notificationService.create({
+          type: NotificationType.SYSTEM,
+          priority: NotificationPriority.MEDIUM,
+          title: `yêu cầu ${service.requestServiceId.slice(0,13)} đã được hoàn tất`,
+          content: `Thiết bị của bạn sẽ được bảo hành theo số ngày bạn đã trao đổi, trong thời gian này bạn vẫn có thể liên lạc với nhân viên nếu có vấn đề,ngoài ra nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
+          userId: service.userId,
+          actionUrl: `/requestService/detail`,
+          metadata :`${service.requestServiceId}`
+        });
+        await this.notificationService.create({
+          type: NotificationType.SYSTEM,
+          priority: NotificationPriority.MEDIUM,
+          title: `yêu cầu ${service.requestServiceId.slice(0,13)} đã được hoàn tất`,
+          content: `Cảm ơn vì sự nỗ lực của bạn, trong thời gian này bạn vãn bảo hành cho người dùng trong thời gian đã định`,
+          userId: res.fixerId,
+          actionUrl: `/requestService/detail`,
+          metadata :`${service.requestServiceId}`
+        });
         const createData = {
           userId: service.userId,
           totalRevenue: Number(service.price),
