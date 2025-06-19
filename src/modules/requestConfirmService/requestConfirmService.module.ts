@@ -7,6 +7,8 @@ import { RequestConfirmServiceService } from './requestConfirmService.service';
 import { CloudService } from 'src/helpers/cloud.helper';
 import { HistoryActiveRequestModule } from 'src/modules/historyActiveRequest/historyActiveRequest.module';
 import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module';
+import { NotificationService } from 'src/modules/notification/notification.service';
+import { NotificationModule } from 'src/modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module'
     ]),
     HistoryActiveRequestModule,
     RevenueManagerModule,
+    NotificationModule,
   ],
   controllers: [RequestConfirmServiceController],
   providers: [RequestConfirmServiceService, CloudService],

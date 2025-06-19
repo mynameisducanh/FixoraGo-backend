@@ -19,6 +19,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { CONFIRM_REGISTER_BY_ADMIN } from 'src/common/constants/message';
 import { MailerService } from 'src/helpers/mailer.helper';
 import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
+import { plainToClass } from 'class-transformer';
+import { UserResponse } from 'src/modules/users/types/user.types';
 
 @Injectable()
 export class UsersService {
@@ -52,7 +54,7 @@ export class UsersService {
     return user;
   }
 
-  async findById(id: string): Promise<UsersEntity> {
+  async findById(id: string): Promise<any> {
     const user = await this.userRes
       .createQueryBuilder('user')
       .where('user.id = :id', { id })
@@ -71,12 +73,14 @@ export class UsersService {
         'user.CurrentLocation as currentLocation',
         'user.Status as status',
         'user.CreateAt as createAt',
-        'user.LastCheckIn as lastCheckIn',
+        'user.LastCheckIn as lastcheckin',
         'user.AuthData as authData',
       ])
       .getRawOne();
-
-    return user;
+      const userData = plainToClass(UserResponse, user, {
+        excludeExtraneousValues: true,
+      });
+      return userData;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UsersEntity> {

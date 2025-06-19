@@ -4,8 +4,10 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuth } from 'src/common/decorators/jwt-auth.decorator'; 
 import { User } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('notifications')
+@ApiTags('Notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
@@ -21,7 +23,6 @@ export class NotificationController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    console.log(user)
     return await this.notificationService.findAll(user.id, page, limit);
   }
 

@@ -54,7 +54,6 @@ export class ServiceReviewController {
     description: 'Return reviews for the specified fixer',
   })
   async getReviewsByFixerId(@Param('fixerId') fixerId: string) {
-    console.log(fixerId);
     return await this.serviceReviewService.getReviewsByFixerId(fixerId);
   }
 

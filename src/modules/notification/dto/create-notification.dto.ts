@@ -26,6 +26,10 @@ export class CreateNotificationDto {
   @IsOptional()
   actionUrl?: string;
 
+  @IsString()
+  @IsOptional()
+  metadata?: string;
+
   @IsUUID()
   @IsNotEmpty()
   userId: string;

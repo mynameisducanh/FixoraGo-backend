@@ -17,9 +17,10 @@ import { UpdateRequestConfirmServiceDto } from './dto/update-request-confirm-ser
 import { MessageResponse } from 'src/common/types/response';
 import { RequestConfirmServiceService } from './requestConfirmService.service';
 import { RequestConfirmServiceResponse } from './types/requestConfirmService.types';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 
 @Controller('requestConfirmService')
+@ApiTags('Propose for request service')
 export class RequestConfirmServiceController {
   constructor(
     private readonly requestConfirmServiceService: RequestConfirmServiceService,

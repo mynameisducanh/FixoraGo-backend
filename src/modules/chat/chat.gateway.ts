@@ -92,7 +92,6 @@ export class ChatGateway
     @ConnectedSocket() client: Socket,
   ) {
     // Parse nếu là JSON string
-    console.log(data);
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
@@ -100,7 +99,6 @@ export class ChatGateway
         throw new Error('Invalid JSON payload');
       }
     }
-    console.log(data);
 
     const { roomId, senderId, senderName, receiverId, receiverName, content } =
       data;
@@ -141,5 +139,14 @@ export class ChatGateway
     const { roomId } = data;
     const room = await this.chatService.closeRoom(roomId);
     this.server.to(roomId).emit('roomClosed', room);
+  }
+
+  // Gửi socket event khi tạo request service thành công
+  sendRequestCreated(requestId: string) {
+    this.server.emit('requestServiceCreated', {
+      requestId,
+      message: 'Có yêu cầu dịch vụ mới được tạo',
+      timestamp: new Date().toISOString(),
+    });
   }
 }

@@ -1,4 +1,10 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { CreateRequestServiceDto } from 'src/modules/requestService/dto/create-request-service.dto';
@@ -22,6 +28,7 @@ import { generateId } from 'src/utils/function';
 import { MoreThanOrEqual } from 'typeorm';
 import { UpdateRequestServiceDto } from 'src/modules/requestService/dto/update-request-service.dto';
 import { ChatService } from '../chat/chat.service';
+import { ChatGateway } from '../chat/chat.gateway';
 import { NotificationService } from 'src/modules/notification/notification.service';
 import {
   NotificationPriority,
@@ -34,9 +41,11 @@ export class RequestServiceService {
     private readonly cloudService: CloudService,
     @InjectRepository(RequestServiceEntity)
     private readonly requestServiceRes: Repository<RequestServiceEntity>,
+    @Inject(forwardRef(() => UsersService))
     private readonly userService: UsersService,
     private readonly historyActiveRequestService: HistoryActiveRequestService,
     private readonly chatService: ChatService,
+    private readonly chatGateway: ChatGateway,
     private notificationService: NotificationService,
   ) {}
 
@@ -83,14 +92,20 @@ export class RequestServiceService {
       name: 'Yêu cầu đã được gửi vui lòng chờ phản hồi từ nhân viên',
       type: 'Yêu cầu dịch vụ đã được tạo',
     };
-     await this.notificationService.create({
+    await this.notificationService.create({
       type: NotificationType.SYSTEM,
       priority: NotificationPriority.MEDIUM,
-      title: 'Tạo yêu cầu thành công',
+      title: `Tạo yêu cầu thành công , mã yêu cầu ${idCreate.slice(0,13)}`,
       content: `Bạn vừa tạo thành công 1 yêu cầu, cảm ơn bạn đã sử dụng dịch vụ`,
       userId: body.userId,
+      actionUrl: `/requestService/detail`,
+      metadata :`${idCreate}`
     });
     await this.historyActiveRequestService.create(dataHistory);
+    await this.chatGateway.sendRequestCreated(idCreate);
+    const temp = await this.userService.findById(body.userId);
+    temp.lastCheckIn = Number(temp.lastCheckIn || 0) + 1;
+    await this.userService.save(temp);
     return {
       message: 'Tạo request service thành công',
       statusCode: HttpStatus.OK,
@@ -103,8 +118,7 @@ export class RequestServiceService {
         this.requestServiceRes.createQueryBuilder('requestServices');
 
       const data = queryResult
-        .orderBy('requestServices.UpdateAt', 'ASC')
-        .addOrderBy('requestServices.CreateAt', 'ASC')
+        .orderBy('requestServices.CreateAt', 'ASC')
         .addSelect([
           'requestServices.id AS id',
           'requestServices.userId AS userid',
@@ -133,13 +147,46 @@ export class RequestServiceService {
         excludeExtraneousValues: true,
       });
 
+      // Get user information for each request
+      const itemsWithUserInfo = await Promise.all(
+        items.map(async (item) => {
+          if (item.userId) {
+            try {
+              const userInfo = await this.userService.getUserNameById(
+                item.userId,
+              );
+              let fixerInfo;
+              if (item.fixerId) {
+                fixerInfo = await this.userService.getUserNameById(
+                  item.fixerId,
+                );
+              }
+              return {
+                ...item,
+                user: userInfo,
+                fixer: fixerInfo,
+              };
+            } catch (error) {
+              console.error(
+                `Error getting user info for ID ${item.userId}:`,
+                error,
+              );
+              return item;
+            }
+          }
+          return item;
+        }),
+      );
+
       // Check guarantee status and expired requests
       const services = await this.requestServiceRes.find();
       await this.checkAndUpdateGuaranteeStatusForList(services);
       await this.checkAndUpdateExpiredRequests(services);
 
-      return items;
-    } catch (error) {}
+      return itemsWithUserInfo;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAllByUserId(id: string): Promise<RequestServiceResponse[]> {
@@ -200,8 +247,8 @@ export class RequestServiceService {
       });
 
       const data = queryResult
-        .orderBy('requestServices.UpdateAt', 'ASC')
-        .addOrderBy('requestServices.CreateAt', 'ASC')
+        .orderBy('requestServices.UpdateAt', 'DESC')
+        .addOrderBy('requestServices.CreateAt', 'DESC')
         .addSelect([
           'requestServices.id AS id',
           'requestServices.userId AS userid',
@@ -444,9 +491,11 @@ export class RequestServiceService {
     await this.notificationService.create({
       type: NotificationType.SYSTEM,
       priority: NotificationPriority.MEDIUM,
-      title: 'Nhân viên đã nhận yêu cầu',
+      title: `Thông báo từ yêu cầu ${id.slice(0,13)}`,
       content: `Yêu cầu đã được nhận bởi nhân viên`,
       userId: requestService.userId,
+      actionUrl: `/requestService/detail`,
+      metadata :`${id}`
     });
     await this.chatService.createRoom({
       userId: requestService.userId,
@@ -459,7 +508,7 @@ export class RequestServiceService {
     };
     await this.historyActiveRequestService.create(dataHistory);
     await this.requestServiceRes.save(requestService);
-
+    await this.chatGateway.sendRequestCreated(requestService.id);
     return {
       message: 'Fixer nhận request thành công',
       statusCode: HttpStatus.OK,
@@ -554,14 +603,26 @@ export class RequestServiceService {
     requestService.status = ServiceStatus.DELETED;
     requestService.deleteAt = new Date().getTime();
     requestService.updateAt = new Date().getTime();
+    await this.chatGateway.sendRequestCreated(requestService.id);
 
-    // Trừ 5 điểm InfoVerified của user
+    const temp = await this.userService.findById(requestService.userId);
+    temp.lastCheckIn = Number(temp.lastCheckIn || 0) - 1;
+    await this.userService.save(temp);
     await this.userService.updateInfoVerifiedScore(
       requestService.userId,
       5,
       'subtract',
     );
-
+    await this.notificationService.create({
+      type: NotificationType.SYSTEM,
+      priority: NotificationPriority.MEDIUM,
+      title: `Bạn vừa hủy 1 yêu cầu, mã yêu cầu ${requestService.id.slice(0,13)}`,
+      content: `Bạn vừa hủy 1 yêu cầu thành công, nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
+      userId: requestService.userId,
+      actionUrl: `/requestService/detail`,
+      metadata :`${requestService.id}`
+    });
+   
     const dataHistory = {
       requestServiceId: id,
       name: 'Yêu cầu đã bị hủy bởi người dùng',
@@ -602,7 +663,9 @@ export class RequestServiceService {
         'subtract',
       );
     }
-
+    const temp = await this.userService.findById(requestService.userId);
+    temp.lastCheckIn = Number(temp.lastCheckIn || 0) + 1;
+    await this.userService.save(temp);
     const dataHistory = {
       requestServiceId: id,
       name: 'Yêu cầu đã bị từ chối bởi nhân viên',
@@ -610,7 +673,15 @@ export class RequestServiceService {
     };
     await this.historyActiveRequestService.create(dataHistory);
     await this.requestServiceRes.save(requestService);
-
+    await this.notificationService.create({
+      type: NotificationType.SYSTEM,
+      priority: NotificationPriority.MEDIUM,
+      title: `Bạn vừa hủy 1 yêu cầu, mã yêu cầu ${requestService.id.slice(0,13)}`,
+      content: `Bạn vừa hủy 1 yêu cầu thành công, nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
+      userId: requestService.fixerId,
+      actionUrl: `/requestService/detail`,
+      metadata :`${requestService.id}`
+    });
     return {
       message: 'Từ chối request service thành công',
       statusCode: HttpStatus.OK,
@@ -777,7 +848,10 @@ export class RequestServiceService {
       service.guaranteeTime &&
       parseInt(service.guaranteeTime) < new Date().getTime()
     ) {
-      await this.updateRequestServiceStatus(service.id, ServiceStatus.COMPLETED);
+      await this.updateRequestServiceStatus(
+        service.id,
+        ServiceStatus.COMPLETED,
+      );
       service.status = ServiceStatus.COMPLETED;
 
       // Tạo lịch sử khi thời gian bảo hành hết hạn

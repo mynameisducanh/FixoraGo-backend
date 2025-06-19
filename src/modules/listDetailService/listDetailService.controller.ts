@@ -14,8 +14,10 @@ import { MessageResponse } from 'src/common/types/response';
 import { ListDetailServiceService } from 'src/modules/listDetailService/listDetailService.service';
 import { ListDetailServiceEntity } from 'src/database/entities/list-detail-service.entity';
 import { ListDetailServiceResponse } from 'src/modules/listDetailService/types/listDetailService.types';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('listDetailService')
+@ApiTags('List Detail Service')
 export class ListDetailServiceController {
   constructor(private readonly iconsService: ListDetailServiceService) {}
 

@@ -10,6 +10,7 @@ import { HistoryActiveRequestModule } from '../historyActiveRequest/historyActiv
 import { RevenueManagerModule } from '../revenue-manager/revenue-manager.module';
 import { NotificationModule } from '../notification/notification.module';
 import { UsersModule } from '../users/users.module';
+import { RequestServiceModule } from 'src/modules/requestService/requestService.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UsersModule } from '../users/users.module';
     forwardRef(() => RevenueManagerModule),
     NotificationModule,
     forwardRef(() => UsersModule),
+    RequestServiceModule,
   ],
   providers: [ActivityLogService, CloudService],
   controllers: [ActivityLogController],

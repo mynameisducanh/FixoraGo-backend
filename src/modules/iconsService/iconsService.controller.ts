@@ -15,10 +15,11 @@ import { UpdateIconDto } from './dto/update-icon-service.dto';
 import { IconServiceEntity } from 'src/database/entities/iconsService.entity';
 import { MessageResponse } from 'src/common/types/response';
 import { FileInterceptor } from '@nestjs/platform-express/multer';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { IconServiceResponse } from 'src/modules/iconsService/types/iconService.types';
 
 @Controller('iconsService')
+@ApiTags('Icon service')
 export class IconsServiceController {
   constructor(private readonly iconsService: IconsServiceService) {}
 

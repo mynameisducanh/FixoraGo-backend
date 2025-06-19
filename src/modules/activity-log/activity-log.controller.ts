@@ -16,8 +16,10 @@ import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
 import { ActivityLogEntity } from '../../database/entities/activity-log.entity';
 import { FilterActivityLogDto } from './dto/filter-activity-log.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('activity-logs')
+@ApiTags('Activity Logs')
 export class ActivityLogController {
   constructor(private readonly activityLogService: ActivityLogService) {}
 
@@ -58,17 +60,26 @@ export class ActivityLogController {
   findByRequestServiceIdAndStaffCheckin(
     @Param('requestServiceId') requestServiceId: string,
   ): Promise<ActivityLogEntity> {
-    return this.activityLogService.findByRequestServiceIdAndStaffCheckin(requestServiceId);
+    return this.activityLogService.findByRequestServiceIdAndStaffCheckin(
+      requestServiceId,
+    );
   }
 
   @Get('check-fixer-checkin/:requestServiceId')
   checkFixerCheckin(@Param('requestServiceId') requestServiceId: string) {
     return this.activityLogService.checkFixerCheckin(requestServiceId);
   }
+
+  @Get('check-fixer-going/:requestServiceId')
+  checkStaffGoing(@Param('requestServiceId') requestServiceId: string) {
+    return this.activityLogService.checkStaffGoing(requestServiceId);
+  }
+
   @Get('check-user-confirm-checkin/:requestServiceId')
   checkUserConfirmCheckin(@Param('requestServiceId') requestServiceId: string) {
     return this.activityLogService.checkUserConfirmCheckin(requestServiceId);
   }
+
   @Get('all/staff-payfee/:userId')
   findAllStaffPayfee(
     @Param('userId') userId: string,
