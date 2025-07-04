@@ -48,100 +48,111 @@ export class ActivityLogService {
     file?: Express.Multer.File,
   ): Promise<ActivityLogEntity> {
     try {
-    let imageUrl = '';
-    if (file) {
-      imageUrl = await this.cloudService.uploadFileToCloud(file);
-    }
-    const id = generateId().toLocaleLowerCase();
-    const activityLog = this.activityLogRepository.create({
-      id: id,
-      ...createActivityLogDto,
-      imageUrl: imageUrl || createActivityLogDto.imageUrl,
-      createAt: new Date().getTime(),
-      updateAt: new Date().getTime(),
-    });
-    let dataHistory;
-    const requestService = await this.requestServiceService.getOneById(
-      createActivityLogDto.requestServiceId,
-    );
-    if (createActivityLogDto.activityType === 'staff_going') {
-      dataHistory = {
-        requestServiceId: createActivityLogDto.requestServiceId,
-        name: 'Nhân viên đã đánh dấu là đang tới!',
-        type: `Thông báo từ nhân viên`,
-      };
-      await this.historyActiveRequestService.create(dataHistory);
-      await this.notificationService.create({
-        type: NotificationType.FIXER_SERVICE,
-        priority: NotificationPriority.MEDIUM,
-        title: `Thông báo của yêu cầu ${requestService.id.slice(0, 13)}`,
-        content: `Nhân viên đã đánh dấu là đang tới, hãy để ý điện thoại của bạn`,
-        userId: requestService.userId,
-        actionUrl: `/requestService/detail`,
-        metadata: `${requestService.id}`,
-      });
-    }
-    if (createActivityLogDto.activityType === 'staff_checkin') {
-      dataHistory = {
-        requestServiceId: createActivityLogDto.requestServiceId,
-        name: 'Nhân viên đã đánh dấu là đã tới',
-        type: `Thông báo từ nhân viên`,
-      };
-      await this.historyActiveRequestService.create(dataHistory);
-    }
-    if (
-      createActivityLogDto.activityType === 'user_report' ||
-      createActivityLogDto.activityType === 'fixer_report'
-    ) {
-      dataHistory = {
-        requestServiceId: createActivityLogDto.requestServiceId,
-        name: 'Chúng tôi đã nhận được báo cáo từ bạn.Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể',
-        type: 'Báo cáo người dùng thành công',
-      };
-      await this.historyActiveRequestService.create(dataHistory);
-    }
-    if (createActivityLogDto.activityType === 'user_reject') {
-      await this.notificationService.create({
-        type: NotificationType.SYSTEM,
-        priority: NotificationPriority.MEDIUM,
-        title: `Người dùng đã hủy yêu cầu ${requestService.id.slice(0, 13)}`,
-        content: `Người dùng vừa hủy yêu cầu với nội dung ${createActivityLogDto.note}`,
-        userId: requestService.fixerId,
-        actionUrl: `/requestService/detail`,
-        metadata: `${requestService.id}`,
-      });
-    }
-    if (createActivityLogDto.activityType === 'fixer_reject') {
-      await this.notificationService.create({
-        type: NotificationType.SYSTEM,
-        priority: NotificationPriority.MEDIUM,
-        title: `Nhân viên đã hủy yêu cầu ${requestService.id.slice(0, 13)}`,
-        content: `Nhân viên vừa hủy yêu cầu với nội dung ${createActivityLogDto.note}`,
-        userId: requestService.userId,
-        actionUrl: `/requestService/detail`,
-        metadata: `${requestService.id}`,
-      });
-    }
-    if (createActivityLogDto.activityType === 'staff_payfee') {
-      const dataRevenue = {
-        userId: createActivityLogDto.userId,
-        paidFees: Number(createActivityLogDto.note),
-        status: 'UnConfirm',
-        temp: 'staff_payfee',
-        activityId: id,
+      let imageUrl = '';
+      if (file) {
+        imageUrl = await this.cloudService.uploadFileToCloud(file);
+      }
+      const id = generateId().toLocaleLowerCase();
+      const activityLog = this.activityLogRepository.create({
+        id: id,
+        ...createActivityLogDto,
+        imageUrl: imageUrl || createActivityLogDto.imageUrl,
         createAt: new Date().getTime(),
         updateAt: new Date().getTime(),
-      };
-      await this.revenueManagerService.create(dataRevenue);
-      await this.notificationService.create({
-        type: NotificationType.SYSTEM,
-        priority: NotificationPriority.MEDIUM,
-        title: 'Gửi yêu cầu thành công',
-        content: `Chúng tôi đã nhận được yêu cầu và bill nộp phí của bạn, chúng thôi sẽ xác nhận và thông báo tới bạn sớm nhất`,
-        userId: createActivityLogDto.userId,
       });
-    }
-    return await this.activityLogRepository.save(activityLog);
+      let dataHistory;
+      const requestService = await this.requestServiceService.getOneById(
+        createActivityLogDto.requestServiceId,
+      );
+      if (createActivityLogDto.activityType === 'staff_going') {
+        dataHistory = {
+          requestServiceId: createActivityLogDto.requestServiceId,
+          name: 'Nhân viên đã đánh dấu là đang tới!',
+          type: `Thông báo từ nhân viên`,
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+        await this.notificationService.create({
+          type: NotificationType.FIXER_SERVICE,
+          priority: NotificationPriority.MEDIUM,
+          title: `Thông báo của yêu cầu ${requestService.id.slice(0, 13)}`,
+          content: `Nhân viên đã đánh dấu là đang tới, hãy để ý điện thoại của bạn`,
+          userId: requestService.userId,
+          actionUrl: `/requestService/detail`,
+          metadata: `${requestService.id}`,
+        });
+      }
+      if (createActivityLogDto.activityType === 'staff_checkin') {
+        dataHistory = {
+          requestServiceId: createActivityLogDto.requestServiceId,
+          name: 'Nhân viên đã đánh dấu là đã tới',
+          type: `Thông báo từ nhân viên`,
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+        await this.notificationService.create({
+          type: NotificationType.FIXER_SERVICE,
+          priority: NotificationPriority.MEDIUM,
+          title: `Thông báo của yêu cầu ${requestService.id.slice(0, 13)}`,
+          content: `Nhân viên đã đánh dấu là đã tới, bạn có thể xem hình ảnh check-in của nhân viên`,
+          userId: requestService.userId,
+          actionUrl: `/requestService/detail`,
+          metadata: `${requestService.id}`,
+        });
+      }
+      if (
+        createActivityLogDto.activityType === 'user_report' ||
+        createActivityLogDto.activityType === 'fixer_report'
+      ) {
+        dataHistory = {
+          requestServiceId: createActivityLogDto.requestServiceId,
+          name: 'Chúng tôi đã nhận được báo cáo từ bạn.Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể',
+          type: 'Báo cáo người dùng thành công',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+      }
+      if (createActivityLogDto.activityType === 'user_reject') {
+        if (requestService.fixerId) {
+          await this.notificationService.create({
+            type: NotificationType.SYSTEM,
+            priority: NotificationPriority.MEDIUM,
+            title: `Người dùng đã hủy yêu cầu ${requestService.id.slice(0, 13)}`,
+            content: `Người dùng vừa hủy yêu cầu với nội dung ${createActivityLogDto.note}`,
+            userId: requestService.fixerId,
+            actionUrl: `/requestService/detail`,
+            metadata: `${requestService.id}`,
+          });
+        }
+      }
+      if (createActivityLogDto.activityType === 'fixer_reject') {
+        await this.notificationService.create({
+          type: NotificationType.SYSTEM,
+          priority: NotificationPriority.MEDIUM,
+          title: `Nhân viên đã hủy yêu cầu ${requestService.id.slice(0, 13)}`,
+          content: `Nhân viên vừa hủy yêu cầu với nội dung ${createActivityLogDto.note}`,
+          userId: requestService.userId,
+          actionUrl: `/requestService/detail`,
+          metadata: `${requestService.id}`,
+        });
+      }
+      if (createActivityLogDto.activityType === 'staff_payfee') {
+        const dataRevenue = {
+          userId: createActivityLogDto.userId,
+          paidFees: Number(createActivityLogDto.note),
+          status: 'UnConfirm',
+          temp: 'staff_payfee',
+          activityId: id,
+          createAt: new Date().getTime(),
+          updateAt: new Date().getTime(),
+        };
+        await this.revenueManagerService.create(dataRevenue);
+        await this.notificationService.create({
+          type: NotificationType.SYSTEM,
+          priority: NotificationPriority.MEDIUM,
+          title: 'Gửi yêu cầu thành công',
+          content: `Chúng tôi đã nhận được yêu cầu và bill nộp phí của bạn, chúng thôi sẽ xác nhận và thông báo tới bạn sớm nhất`,
+          userId: createActivityLogDto.userId,
+        });
+      }
+      return await this.activityLogRepository.save(activityLog);
     } catch (error) {
       console.log(error);
     }

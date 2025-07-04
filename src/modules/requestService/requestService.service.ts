@@ -95,11 +95,11 @@ export class RequestServiceService {
     await this.notificationService.create({
       type: NotificationType.SYSTEM,
       priority: NotificationPriority.MEDIUM,
-      title: `Tạo yêu cầu thành công , mã yêu cầu ${idCreate.slice(0,13)}`,
+      title: `Tạo yêu cầu thành công , mã yêu cầu ${idCreate.slice(0, 13)}`,
       content: `Bạn vừa tạo thành công 1 yêu cầu, cảm ơn bạn đã sử dụng dịch vụ`,
       userId: body.userId,
       actionUrl: `/requestService/detail`,
-      metadata :`${idCreate}`
+      metadata: `${idCreate}`,
     });
     await this.historyActiveRequestService.create(dataHistory);
     await this.chatGateway.sendRequestCreated(idCreate);
@@ -488,15 +488,17 @@ export class RequestServiceService {
     //   requestService.userId,
     //   fixerId,
     // );
-    await this.notificationService.create({
-      type: NotificationType.SYSTEM,
-      priority: NotificationPriority.MEDIUM,
-      title: `Thông báo từ yêu cầu ${id.slice(0,13)}`,
-      content: `Yêu cầu đã được nhận bởi nhân viên`,
-      userId: requestService.userId,
-      actionUrl: `/requestService/detail`,
-      metadata :`${id}`
-    });
+    if (requestService.userId) {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: `Thông báo từ yêu cầu ${id.slice(0, 13)}`,
+        content: `Yêu cầu đã được nhận bởi nhân viên`,
+        userId: requestService.userId,
+        actionUrl: `/requestService/detail`,
+        metadata: `${id}`,
+      });
+    }
     await this.chatService.createRoom({
       userId: requestService.userId,
       staffId: fixerId,
@@ -613,16 +615,18 @@ export class RequestServiceService {
       5,
       'subtract',
     );
-    await this.notificationService.create({
-      type: NotificationType.SYSTEM,
-      priority: NotificationPriority.MEDIUM,
-      title: `Bạn vừa hủy 1 yêu cầu, mã yêu cầu ${requestService.id.slice(0,13)}`,
-      content: `Bạn vừa hủy 1 yêu cầu thành công, nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
-      userId: requestService.userId,
-      actionUrl: `/requestService/detail`,
-      metadata :`${requestService.id}`
-    });
-   
+    if (requestService.userId) {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: `Bạn vừa hủy 1 yêu cầu, mã yêu cầu ${requestService.id.slice(0, 13)}`,
+        content: `Bạn vừa hủy 1 yêu cầu thành công, nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
+        userId: requestService.userId,
+        actionUrl: `/requestService/detail`,
+        metadata: `${requestService.id}`,
+      });
+    }
+
     const dataHistory = {
       requestServiceId: id,
       name: 'Yêu cầu đã bị hủy bởi người dùng',
@@ -673,15 +677,17 @@ export class RequestServiceService {
     };
     await this.historyActiveRequestService.create(dataHistory);
     await this.requestServiceRes.save(requestService);
-    await this.notificationService.create({
-      type: NotificationType.SYSTEM,
-      priority: NotificationPriority.MEDIUM,
-      title: `Bạn vừa hủy 1 yêu cầu, mã yêu cầu ${requestService.id.slice(0,13)}`,
-      content: `Bạn vừa hủy 1 yêu cầu thành công, nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
-      userId: requestService.fixerId,
-      actionUrl: `/requestService/detail`,
-      metadata :`${requestService.id}`
-    });
+    if (requestService.fixerId) {
+      await this.notificationService.create({
+        type: NotificationType.SYSTEM,
+        priority: NotificationPriority.MEDIUM,
+        title: `Bạn vừa hủy 1 yêu cầu, mã yêu cầu ${requestService.id.slice(0, 13)}`,
+        content: `Bạn vừa hủy 1 yêu cầu thành công, nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
+        userId: requestService.fixerId,
+        actionUrl: `/requestService/detail`,
+        metadata: `${requestService.id}`,
+      });
+    }
     return {
       message: 'Từ chối request service thành công',
       statusCode: HttpStatus.OK,
