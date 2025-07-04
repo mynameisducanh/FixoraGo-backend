@@ -17,7 +17,10 @@ import { ServiceStatus } from 'src/database/entities/request-service.entity';
 import { RevenueManagerService } from '../revenue-manager/revenue-manager.service';
 import { UsersService } from 'src/modules/users/users.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
-import { NotificationPriority, NotificationType } from 'src/database/entities/notification.entity';
+import {
+  NotificationPriority,
+  NotificationType,
+} from 'src/database/entities/notification.entity';
 import { RequestServiceService } from 'src/modules/requestService/requestService.service';
 
 @Injectable()
@@ -47,50 +50,61 @@ export class RequestConfirmServiceService {
   ): Promise<MessageResponse & { id?: string }> {
     try {
       let imageUrl = '';
-    if (file) {
-      imageUrl = await this.cloudService.uploadFileToCloud(file);
-    }
+      if (file) {
+        imageUrl = await this.cloudService.uploadFileToCloud(file);
+      }
 
-    const newService: DeepPartial<RequestConfirmServiceEntity> = {
-      userId: body.userId,
-      requestServiceId: body.requestServiceId,
-      name: body.name,
-      type: body.type,
-      price: body.price,
-      userAccept: null,
-      image: imageUrl,
-      note: body.note,
-      temp: body.temp,
-      createAt: new Date().getTime(),
-      updateAt: new Date().getTime(),
-    };
-
-    const savedService = await this.requestConfirmServiceRes.save(newService);
-    let dataHistory;
-    if (body.type === ServiceType.REPAIR) {
-      dataHistory = {
+      const newService: DeepPartial<RequestConfirmServiceEntity> = {
+        userId: body.userId,
         requestServiceId: body.requestServiceId,
-        name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của khách hàng',
-        type: 'Đề xuất từ nhân viên',
+        name: body.name,
+        type: body.type,
+        price: body.price,
+        userAccept: null,
+        image: imageUrl,
+        note: body.note,
+        temp: body.temp,
+        createAt: new Date().getTime(),
+        updateAt: new Date().getTime(),
       };
-      await this.historyActiveRequestService.create(dataHistory);
-    }
-    if (body.type === ServiceType.COMPLETED) {
-      dataHistory = {
-        requestServiceId: body.requestServiceId,
-        name: 'Nhân viên đã đánh dấu là đã hoàn thành, đang chờ khách hàng xác nhận',
-        type: 'Thông báo hoàn thành từ nhân viên',
-      };
-      await this.historyActiveRequestService.create(dataHistory);
-    }
+      const res = await this.requestServiceService.getOneById(
+        body.requestServiceId,
+      );
+      const savedService = await this.requestConfirmServiceRes.save(newService);
+      let dataHistory;
+      if (body.type === ServiceType.REPAIR) {
+        dataHistory = {
+          requestServiceId: body.requestServiceId,
+          name: 'Nhân viên đã đề xuất các sửa chữa cho thiết bị của khách hàng',
+          type: 'Đề xuất từ nhân viên',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+      }
+      if (body.type === ServiceType.COMPLETED) {
+        dataHistory = {
+          requestServiceId: body.requestServiceId,
+          name: 'Nhân viên đã đánh dấu là đã hoàn thành, đang chờ khách hàng xác nhận',
+          type: 'Thông báo hoàn thành từ nhân viên',
+        };
+        await this.historyActiveRequestService.create(dataHistory);
+          await this.notificationService.create({
+            type: NotificationType.SYSTEM,
+            priority: NotificationPriority.MEDIUM,
+            title: `Thông báo từ yêu cầu ${body.requestServiceId.slice(0, 13)}`,
+            content: `Nhân viên đã đánh dấu là đã hoàn thành, vui lòng xác nhận`,
+            userId: res.userId,
+            actionUrl: `/requestService/detail`,
+            metadata: `${body.requestServiceId}`,
+          });
+      }
 
-    return {
-      message: 'Tạo request confirm service thành công',
-      statusCode: HttpStatus.OK,
-      id: savedService.id,
-    };
+      return {
+        message: 'Tạo request confirm service thành công',
+        statusCode: HttpStatus.OK,
+        id: savedService.id,
+      };
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 
@@ -259,7 +273,9 @@ export class RequestConfirmServiceService {
         );
       }
       let dataHistory;
-      const res = await this.requestServiceService.getOneById(service.requestServiceId);
+      const res = await this.requestServiceService.getOneById(
+        service.requestServiceId,
+      );
       if (service.type === 'repair') {
         dataHistory = {
           requestServiceId: service.requestServiceId,
@@ -275,6 +291,17 @@ export class RequestConfirmServiceService {
           type: 'Khách hàng đã đồng ý với đề xuất',
         };
         await this.historyActiveRequestService.create(dataHistory);
+        if (res.fixerId) {
+          await this.notificationService.create({
+            type: NotificationType.SYSTEM,
+            priority: NotificationPriority.MEDIUM,
+            title: `yêu cầu ${service.requestServiceId.slice(0, 13)} đã được chấp nhận`,
+            content: `Khách hàng đã đồng ý với đề xuất của bạn, hãy bắt đầu công việc sửa chữa thiết bị`,
+            userId: res.fixerId,
+            actionUrl: `/requestService/detail`,
+            metadata: `${service.requestServiceId}`,
+          });
+        }
       }
       if (service.type === 'completed') {
         dataHistory = {
@@ -305,30 +332,34 @@ export class RequestConfirmServiceService {
             await this.requestServiceRes.save(requestService);
           }
         }
-        await this.notificationService.create({
-          type: NotificationType.SYSTEM,
-          priority: NotificationPriority.MEDIUM,
-          title: `yêu cầu ${service.requestServiceId.slice(0,13)} đã được hoàn tất`,
-          content: `Thiết bị của bạn sẽ được bảo hành theo số ngày bạn đã trao đổi, trong thời gian này bạn vẫn có thể liên lạc với nhân viên nếu có vấn đề,ngoài ra nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
-          userId: service.userId,
-          actionUrl: `/requestService/detail`,
-          metadata :`${service.requestServiceId}`
-        });
-        await this.notificationService.create({
-          type: NotificationType.SYSTEM,
-          priority: NotificationPriority.MEDIUM,
-          title: `yêu cầu ${service.requestServiceId.slice(0,13)} đã được hoàn tất`,
-          content: `Cảm ơn vì sự nỗ lực của bạn, trong thời gian này bạn vãn bảo hành cho người dùng trong thời gian đã định`,
-          userId: res.fixerId,
-          actionUrl: `/requestService/detail`,
-          metadata :`${service.requestServiceId}`
-        });
+        if (service.userId) {
+          await this.notificationService.create({
+            type: NotificationType.SYSTEM,
+            priority: NotificationPriority.MEDIUM,
+            title: `yêu cầu ${service.requestServiceId.slice(0, 13)} đã được hoàn tất`,
+            content: `Thiết bị của bạn sẽ được bảo hành theo số ngày bạn đã trao đổi, trong thời gian này bạn vẫn có thể liên lạc với nhân viên nếu có vấn đề,ngoài ra nếu bạn cần hỗ trợ hãy gọi tới số 0835363526`,
+            userId: service.userId,
+            actionUrl: `/requestService/detail`,
+            metadata: `${service.requestServiceId}`,
+          });
+        }
+        if (res.fixerId) {
+          await this.notificationService.create({
+            type: NotificationType.SYSTEM,
+            priority: NotificationPriority.MEDIUM,
+            title: `yêu cầu ${service.requestServiceId.slice(0, 13)} đã được hoàn tất`,
+            content: `Cảm ơn vì sự nỗ lực của bạn, trong thời gian này bạn vãn bảo hành cho người dùng trong thời gian đã định`,
+            userId: res.fixerId,
+            actionUrl: `/requestService/detail`,
+            metadata: `${service.requestServiceId}`,
+          });
+        }
         const createData = {
           userId: service.userId,
           totalRevenue: Number(service.price),
           unpaidFees: Number(service.price) * 0.1,
           status: 'active',
-          temp:'bill',
+          temp: 'bill',
           createAt: new Date().getTime(),
           updateAt: new Date().getTime(),
         };
@@ -401,7 +432,6 @@ export class RequestConfirmServiceService {
       hasCompleted: false,
     };
   }
-
 
   // Revenue statistics methods
   async getUserRevenueStatistics(userId: string) {
@@ -569,17 +599,19 @@ export class RequestConfirmServiceService {
     };
   }
 
-  async checkTotalTypeByRequestServiceId(requestServiceId: string): Promise<{ hasTotalType: boolean; isAccepted: boolean }> {
+  async checkTotalTypeByRequestServiceId(
+    requestServiceId: string,
+  ): Promise<{ hasTotalType: boolean; isAccepted: boolean }> {
     const service = await this.requestConfirmServiceRes.findOne({
       where: {
         requestServiceId: requestServiceId,
-        type: ServiceType.TOTAL
-      }
+        type: ServiceType.TOTAL,
+      },
     });
 
     return {
       hasTotalType: !!service,
-      isAccepted: service?.userAccept === 'Accepted'
+      isAccepted: service?.userAccept === 'Accepted',
     };
   }
 }
